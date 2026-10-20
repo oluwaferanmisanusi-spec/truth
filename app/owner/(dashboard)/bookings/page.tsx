@@ -1,38 +1,137 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { requireOwner } from "@/lib/auth/owner";
-import { logOut } from "../../login/actions";
+import { connection } from "next/server";
+import { Calendar } from "lucide-react";
+import { PageHeader } from "@/components/owner/page-header";
+import { BookingStatusBadge } from "@/components/status-badge";
+import { buttonClass } from "@/components/ui";
+import { formatDay, formatNaira, formatTime, shopToday, SHOP_TIME_ZONE_LABEL } from "@/lib/format";
+import { listBookings, listFilterOptions, parseFilters, type BookingFilters as Filters } from "@/lib/owner/bookings";
+import { BookingFilters } from "./filters";
+import { CancelBookingButton } from "./cancel-button";
 
 export const metadata: Metadata = { title: "Bookings" };
 
-// Placeholder until Figma 5.1 Bookings is built.
-export default function OwnerBookingsPage() {
+// Figma 5.1 Bookings (7:3719), 5.1b filtered, 5.2 cancel, 5.3 no results.
+export default function OwnerBookingsPage({ searchParams }: PageProps<"/owner/bookings">) {
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-10">
-      <p className="font-display text-wordmark font-semibold tracking-[-0.3px] text-primary">Truth</p>
-      <div className="flex flex-col gap-2">
-        <h1 className="text-h1 font-semibold">Bookings</h1>
-        <Suspense fallback={<p className="text-ink-muted">&nbsp;</p>}>
-          <SignedInAs />
-        </Suspense>
-      </div>
-      <form action={logOut}>
-        <button
-          type="submit"
-          className="rounded-md border border-border-input bg-surface px-5 py-3 font-semibold text-primary hover:bg-primary-tint focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-focus"
-        >
-          Log out
-        </button>
-      </form>
-    </main>
+    <>
+      <PageHeader
+        title="Bookings"
+        description={`Every booking across all barbers. All times are West Africa Time (${SHOP_TIME_ZONE_LABEL}).`}
+      />
+      <Suspense fallback={<p className="text-small text-ink-muted">Loading bookings…</p>}>
+        <BookingsResults searchParams={searchParams} />
+      </Suspense>
+    </>
   );
 }
 
-async function SignedInAs() {
-  const owner = await requireOwner();
+async function BookingsResults({ searchParams }: { searchParams: PageProps<"/owner/bookings">["searchParams"] }) {
+  await connection(); // "today" depends on the clock, so this renders per request
+  const filters = parseFilters(await searchParams);
+  const today = shopToday();
+  const [bookings, options] = await Promise.all([listBookings(filters), listFilterOptions()]);
+  const isFiltered = Boolean(
+    filters.barber || filters.service || filters.status || filters.from !== today || filters.to !== today,
+  );
+
   return (
-    <p className="text-ink-muted">
-      You&apos;re logged in as {owner.email}. The bookings table is the next screen we build.
-    </p>
+    <>
+      <div className="flex flex-col gap-4">
+        <BookingFilters values={filters} today={today} options={options} isFiltered={isFiltered} />
+        <p className="text-small text-ink-muted" aria-live="polite">
+          {bookings.length === 1 ? "1 booking" : `${bookings.length} bookings`}
+        </p>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <table className="w-full table-fixed border-collapse text-left">
+          <colgroup>
+            <col className="w-40" />
+            <col className="w-54" />
+            <col className="w-44" />
+            <col className="w-41.5" />
+            <col className="w-29" />
+            <col className="w-36.5" />
+            <col />
+          </colgroup>
+          <thead className="bg-surface-muted text-caption font-medium text-ink-muted">
+            <tr className="h-10 border-b border-border">
+              <th scope="col" className="py-2 pr-2 pl-5 font-medium">When</th>
+              <th scope="col" className="px-2 py-2 font-medium">Customer</th>
+              <th scope="col" className="px-2 py-2 font-medium">Service</th>
+              <th scope="col" className="px-2 py-2 font-medium">Barber</th>
+              <th scope="col" className="px-2 py-2 text-right font-medium">Amount</th>
+              <th scope="col" className="px-2 py-2 font-medium">Status</th>
+              <th scope="col" className="py-2 pr-5 pl-2"><span className="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody className="text-small">
+            {bookings.map((b) => {
+              const day = formatDay(b.starts_at);
+              const time = formatTime(b.starts_at);
+              const barberName = b.barber?.full_name ?? "—";
+              return (
+                <tr key={b.id} className="h-18 border-b border-border last:border-b-0">
+                  <td className="py-3 pr-2 pl-5 font-medium">
+                    <span className="block">{day}</span>
+                    <span className="block text-caption text-ink-muted">
+                      {time} {SHOP_TIME_ZONE_LABEL}
+                    </span>
+                  </td>
+                  <td className="px-2 py-3 font-medium">
+                    <span className="block truncate">{b.customer_name}</span>
+                    <span className="block truncate text-caption text-ink-muted" title={b.customer_email}>
+                      {b.customer_email}
+                    </span>
+                  </td>
+                  <td className="px-2 py-3">{b.service_name}</td>
+                  <td className="px-2 py-3">{barberName}</td>
+                  <td className="px-2 py-3 text-right font-medium tabular-nums">{formatNaira(b.price_kobo)}</td>
+                  <td className="px-2 py-3">
+                    <BookingStatusBadge status={b.status} />
+                  </td>
+                  <td className="py-3 pr-5 pl-2 text-right">
+                    {b.cancellable && (
+                      <CancelBookingButton
+                        bookingId={b.id}
+                        customerName={b.customer_name}
+                        serviceName={b.service_name}
+                        barberName={barberName}
+                        day={day}
+                        time={time}
+                        amount={formatNaira(b.price_kobo)}
+                      />
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {bookings.length === 0 && <NoResults filters={filters} />}
+      </div>
+    </>
+  );
+}
+
+function NoResults({ filters }: { filters: Filters }) {
+  const singleDay = filters.from === filters.to;
+  return (
+    <div className="mx-auto flex max-w-86 flex-col items-center gap-3 py-8 text-center">
+      <div className="flex size-14 items-center justify-center rounded-full bg-primary-tint text-primary">
+        <Calendar aria-hidden size={24} />
+      </div>
+      <h2 className="text-h2 font-semibold">No bookings match these filters</h2>
+      <p className="text-ink-muted">
+        {singleDay
+          ? "Try a wider date range, or clear the filters to see everything."
+          : "Try different filters, or clear them to see today’s bookings."}
+      </p>
+      <a href="/owner/bookings" className={buttonClass.secondary}>
+        Clear filters
+      </a>
+    </div>
   );
 }
