@@ -2,9 +2,13 @@
 // It reads and refreshes the user's auth session from cookies.
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 
 export async function createClient() {
   const cookieStore = await cookies();
+  // Supabase reads the clock to check token expiry; that must happen at request time,
+  // not during prerendering (Cache Components).
+  await connection();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
