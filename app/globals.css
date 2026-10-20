@@ -36,6 +36,7 @@
   /* Type scale: size / line-height, from the Figma type specimens. */
   --text-display: 2rem;
   --text-display--line-height: 2.5rem;
+  --text-display--letter-spacing: -0.5px;
   --text-h1: 1.625rem;
   --text-h1--line-height: 2rem;
   --text-h1--letter-spacing: -0.3px;

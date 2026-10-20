@@ -397,7 +397,12 @@ isOneToOne: false
         to: "refunds"
         isOneToOne: true
         isSetofReturn: false
-      } }
+      } },
+"owner_stats":
+{ Args: { "p_from": string,"p_to": string }; Returns: {
+              "barber_id": string,"bookings": number,"cancelled": number,"completed": number,"full_name": string,"no_shows": number,"paid_kobo": number,"refunded_kobo": number
+            }[]
+                           }
           }
           Enums: {
             "barber_status": "invited"|"active"|"inactive","booking_status": "pending_payment"|"expired"|"confirmed"|"completed"|"no_show"|"cancelled","cancelled_by": "customer"|"owner","payment_status": "pending"|"success"|"failed"|"abandoned","refund_status": "pending"|"processed"|"failed","user_role": "customer"|"barber"|"owner"
