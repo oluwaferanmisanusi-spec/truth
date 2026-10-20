@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 export type LoginState = { error?: string; email?: string } | undefined;
 
 // One message for every failure, so the form never reveals whether an email has an account.
-const WRONG_DETAILS = "That email and password don't match. Check them and try again.";
+const WRONG_DETAILS = "The email or password is incorrect. Check them and try again.";
 
 export async function logIn(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
