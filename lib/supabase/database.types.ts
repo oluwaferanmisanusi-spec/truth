@@ -398,6 +398,18 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"owner_invite_barber":
+{ Args: { "p_email": string,"p_expires_at": string,"p_token_hash": string }; Returns: string
+                           },
+"owner_resend_invite":
+{ Args: { "p_barber_id": string,"p_expires_at": string,"p_token_hash": string }; Returns: undefined
+                           },
+"owner_save_barber":
+{ Args: { "p_barber_id": string,"p_hours": Json,"p_service_ids": (string)[] }; Returns: undefined
+                           },
+"owner_set_barber_active":
+{ Args: { "p_active": boolean,"p_barber_id": string }; Returns: undefined
+                           },
 "owner_stats":
 { Args: { "p_from": string,"p_to": string }; Returns: {
               "barber_id": string,"bookings": number,"cancelled": number,"completed": number,"full_name": string,"no_shows": number,"paid_kobo": number,"refunded_kobo": number
