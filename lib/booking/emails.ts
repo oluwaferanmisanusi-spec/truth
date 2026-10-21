@@ -2,6 +2,10 @@
 import "server-only";
 import { formatDay, formatNaira, formatTime, SHOP_TIME_ZONE_LABEL } from "@/lib/format";
 import { siteUrl } from "@/lib/invites";
+import { composeEmail as build } from "@/lib/email";
+
+const firstName = (name: string) => name.trim().split(/\s+/)[0];
+const when = (b: EmailBooking) => `${formatDay(b.starts_at)}, ${formatTime(b.starts_at)} ${SHOP_TIME_ZONE_LABEL}`;
 
 export type EmailBooking = {
   reference: string;
@@ -14,49 +18,6 @@ export type EmailBooking = {
   any_barber: boolean;
   barber_name: string;
 };
-
-const SHOP_ADDRESS = "14 Example Street, Lekki, Lagos";
-
-const escape = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
-const firstName = (name: string) => name.trim().split(/\s+/)[0];
-const when = (b: EmailBooking) => `${formatDay(b.starts_at)}, ${formatTime(b.starts_at)} ${SHOP_TIME_ZONE_LABEL}`;
-
-function layout(paragraphs: string[], rows: [string, string][], button?: { label: string; url: string }) {
-  const p = (t: string) => `<p style="margin:0 0 16px">${t}</p>`;
-  const table = rows
-    .map(([k, v]) =>
-      `<tr><td style="padding:6px 16px 6px 0;color:#5a6070">${escape(k)}</td><td style="padding:6px 0">${escape(v)}</td></tr>`)
-    .join("");
-  const btn = button
-    ? `<p style="margin:24px 0"><a href="${button.url}" style="display:inline-block;background:#1e3a5f;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:10px">${escape(button.label)}</a></p>`
-    : "";
-  return `<!doctype html><html><body style="margin:0;background:#faf8f4;font-family:Inter,Arial,sans-serif;color:#15181e;font-size:16px;line-height:24px">
-<div style="max-width:520px;margin:0 auto;padding:32px 20px">
-<p style="margin:0 0 24px;font-family:Georgia,serif;font-size:22px;font-weight:600;color:#1e3a5f">Truth</p>
-${paragraphs.slice(0, 1).map(p).join("")}
-<table style="border-collapse:collapse;margin:0 0 16px">${table}</table>
-${paragraphs.slice(1).map(p).join("")}
-${btn}
-<p style="margin:32px 0 0;color:#5a6070;font-size:14px">Truth · ${SHOP_ADDRESS}</p>
-</div></body></html>`;
-}
-
-function plain(paragraphs: string[], rows: [string, string][], button?: { label: string; url: string }) {
-  return [
-    paragraphs[0],
-    rows.map(([k, v]) => `${k}: ${v}`).join("\n"),
-    ...paragraphs.slice(1),
-    button ? `${button.label}: ${button.url}` : "",
-    `Truth · ${SHOP_ADDRESS}`,
-  ].filter(Boolean).join("\n\n");
-}
-
-function build(to: string, subject: string, paragraphs: string[], rows: [string, string][], button?: { label: string; url: string }) {
-  const safe = paragraphs.map(escape);
-  return { to, subject, html: layout(safe, rows, button), text: plain(paragraphs, rows, button) };
-}
 
 export function bookingConfirmedEmail(b: EmailBooking, manageUrl: string) {
   return build(
@@ -111,5 +72,43 @@ export function cancelledByShopEmail(b: EmailBooking) {
       ["Reference", b.reference],
     ],
     { label: "Book another time", url: siteUrl("/") },
+  );
+}
+
+export function cancelledByCustomerEmail(b: EmailBooking, refunded: boolean) {
+  return build(
+    b.customer_email,
+    `Your booking on ${formatDay(b.starts_at)} is cancelled`,
+    [
+      `Hi ${firstName(b.customer_name)}, your booking is cancelled.`,
+      refunded
+        ? `Your ${formatNaira(b.price_kobo)} refund is on its way to the card you paid with. It can take a few working days to show in your account.`
+        : "It was less than 24 hours away, so there’s no refund.",
+    ],
+    [
+      ["Service", `${b.service_name}, ${b.duration_minutes} min`],
+      ["Barber", b.barber_name],
+      ["Date and time", when(b)],
+      ["Reference", b.reference],
+    ],
+    { label: "Book another time", url: siteUrl("/") },
+  );
+}
+
+export function bookingMovedEmail(b: EmailBooking, previousStartsAt: string) {
+  return build(
+    b.customer_email,
+    `Booking moved: ${b.service_name} on ${formatDay(b.starts_at)} at ${formatTime(b.starts_at)}`,
+    [
+      `Hi ${firstName(b.customer_name)}, your booking has moved to ${formatDay(b.starts_at)} at ${formatTime(b.starts_at)}.`,
+      "Your payment moved with it, so there’s nothing more to pay. To cancel or move it again, use the link in your confirmation email or your Truth account, up to 24 hours before.",
+    ],
+    [
+      ["Service", `${b.service_name}, ${b.duration_minutes} min`],
+      ["Barber", b.barber_name],
+      ["Was", `${formatDay(previousStartsAt)}, ${formatTime(previousStartsAt)}`],
+      ["Now", when(b)],
+      ["Reference", b.reference],
+    ],
   );
 }

@@ -5,7 +5,27 @@ export type Database = {
   
   "public": {
           Tables: {
-            "barber_hours": {
+            "auth_tokens": {
+                  Row: {
+                    "created_at": string,"expires_at": string,"id": string,"purpose": Database["public"]['Enums']["auth_token_purpose"],"token_hash": string,"used_at": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"expires_at": string,"id"?: string,"purpose": Database["public"]['Enums']["auth_token_purpose"],"token_hash": string,"used_at"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"expires_at"?: string,"id"?: string,"purpose"?: Database["public"]['Enums']["auth_token_purpose"],"token_hash"?: string,"used_at"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "auth_tokens_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"barber_hours": {
                   Row: {
                     "barber_id": string,"ends_at": string | null,"is_open": boolean,"starts_at": string | null,"weekday": number
                   }
@@ -137,14 +157,14 @@ isOneToOne: false
                   ]
                 },"bookings": {
                   Row: {
-                    "any_barber": boolean,"barber_id": string,"buffer_minutes": number,"busy_until": string,"cancelled_at": string | null,"cancelled_by": Database["public"]['Enums']["cancelled_by"] | null,"created_at": string,"customer_email": string,"customer_id": string | null,"customer_name": string,"duration_minutes": number,"ends_at": string,"guest_token_hash": string | null,"hold_expires_at": string | null,"id": string,"outcome_recorded_at": string | null,"outcome_recorded_by": string | null,"price_kobo": number,"reference": string,"refund_due": boolean | null,"service_id": string,"service_name": string,"starts_at": string,"status": Database["public"]['Enums']["booking_status"],"updated_at": string
+                    "any_barber": boolean,"barber_id": string,"buffer_minutes": number,"busy_until": string,"cancelled_at": string | null,"cancelled_by": Database["public"]['Enums']["cancelled_by"] | null,"created_at": string,"customer_email": string,"customer_id": string | null,"customer_name": string,"duration_minutes": number,"ends_at": string,"guest_token_hash": string | null,"hold_expires_at": string | null,"id": string,"outcome_recorded_at": string | null,"outcome_recorded_by": string | null,"price_kobo": number,"reference": string,"refund_due": boolean | null,"reschedule_of": string | null,"service_id": string,"service_name": string,"starts_at": string,"status": Database["public"]['Enums']["booking_status"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "any_barber"?: boolean,"barber_id": string,"buffer_minutes"?: number,"busy_until": string,"cancelled_at"?: string | null,"cancelled_by"?: Database["public"]['Enums']["cancelled_by"] | null,"created_at"?: string,"customer_email": string,"customer_id"?: string | null,"customer_name": string,"duration_minutes": number,"ends_at": string,"guest_token_hash"?: string | null,"hold_expires_at"?: string | null,"id"?: string,"outcome_recorded_at"?: string | null,"outcome_recorded_by"?: string | null,"price_kobo": number,"reference"?: string,"refund_due"?: boolean | null,"service_id": string,"service_name": string,"starts_at": string,"status"?: Database["public"]['Enums']["booking_status"],"updated_at"?: string
+                    "any_barber"?: boolean,"barber_id": string,"buffer_minutes"?: number,"busy_until": string,"cancelled_at"?: string | null,"cancelled_by"?: Database["public"]['Enums']["cancelled_by"] | null,"created_at"?: string,"customer_email": string,"customer_id"?: string | null,"customer_name": string,"duration_minutes": number,"ends_at": string,"guest_token_hash"?: string | null,"hold_expires_at"?: string | null,"id"?: string,"outcome_recorded_at"?: string | null,"outcome_recorded_by"?: string | null,"price_kobo": number,"reference"?: string,"refund_due"?: boolean | null,"reschedule_of"?: string | null,"service_id": string,"service_name": string,"starts_at": string,"status"?: Database["public"]['Enums']["booking_status"],"updated_at"?: string
                   }
                   Update: {
-                    "any_barber"?: boolean,"barber_id"?: string,"buffer_minutes"?: number,"busy_until"?: string,"cancelled_at"?: string | null,"cancelled_by"?: Database["public"]['Enums']["cancelled_by"] | null,"created_at"?: string,"customer_email"?: string,"customer_id"?: string | null,"customer_name"?: string,"duration_minutes"?: number,"ends_at"?: string,"guest_token_hash"?: string | null,"hold_expires_at"?: string | null,"id"?: string,"outcome_recorded_at"?: string | null,"outcome_recorded_by"?: string | null,"price_kobo"?: number,"reference"?: string,"refund_due"?: boolean | null,"service_id"?: string,"service_name"?: string,"starts_at"?: string,"status"?: Database["public"]['Enums']["booking_status"],"updated_at"?: string
+                    "any_barber"?: boolean,"barber_id"?: string,"buffer_minutes"?: number,"busy_until"?: string,"cancelled_at"?: string | null,"cancelled_by"?: Database["public"]['Enums']["cancelled_by"] | null,"created_at"?: string,"customer_email"?: string,"customer_id"?: string | null,"customer_name"?: string,"duration_minutes"?: number,"ends_at"?: string,"guest_token_hash"?: string | null,"hold_expires_at"?: string | null,"id"?: string,"outcome_recorded_at"?: string | null,"outcome_recorded_by"?: string | null,"price_kobo"?: number,"reference"?: string,"refund_due"?: boolean | null,"reschedule_of"?: string | null,"service_id"?: string,"service_name"?: string,"starts_at"?: string,"status"?: Database["public"]['Enums']["booking_status"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -176,6 +196,18 @@ isOneToOne: false
       columns: ["outcome_recorded_by"]
 isOneToOne: false
       referencedRelation: "public_barbers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "bookings_reschedule_of_fkey"
+      columns: ["reschedule_of"]
+isOneToOne: false
+      referencedRelation: "barber_schedule"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "bookings_reschedule_of_fkey"
+      columns: ["reschedule_of"]
+isOneToOne: false
+      referencedRelation: "bookings"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "bookings_service_id_fkey"
@@ -241,14 +273,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "created_at": string,"email": string,"full_name": string,"id": string,"role": Database["public"]['Enums']["user_role"]
+                    "created_at": string,"email": string,"email_verified_at": string | null,"full_name": string,"id": string,"role": Database["public"]['Enums']["user_role"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"email": string,"full_name": string,"id": string,"role"?: Database["public"]['Enums']["user_role"]
+                    "created_at"?: string,"email": string,"email_verified_at"?: string | null,"full_name": string,"id": string,"role"?: Database["public"]['Enums']["user_role"]
                   }
                   Update: {
-                    "created_at"?: string,"email"?: string,"full_name"?: string,"id"?: string,"role"?: Database["public"]['Enums']["user_role"]
+                    "created_at"?: string,"email"?: string,"email_verified_at"?: string | null,"full_name"?: string,"id"?: string,"role"?: Database["public"]['Enums']["user_role"]
                   }
                   Relationships: [
                     
@@ -403,6 +435,42 @@ isOneToOne: false
 "price_kobo": number,
 "reference": string,
 "refund_due": boolean | null,
+"reschedule_of": string | null,
+"service_id": string,
+"service_name": string,
+"starts_at": string,
+"status": Database["public"]['Enums']["booking_status"],
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "bookings"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"create_reschedule_hold":
+{ Args: { "p_booking_id": string,"p_starts_at": string }; Returns: {
+              "any_barber": boolean,
+"barber_id": string,
+"buffer_minutes": number,
+"busy_until": string,
+"cancelled_at": string | null,
+"cancelled_by": Database["public"]['Enums']["cancelled_by"] | null,
+"created_at": string,
+"customer_email": string,
+"customer_id": string | null,
+"customer_name": string,
+"duration_minutes": number,
+"ends_at": string,
+"guest_token_hash": string | null,
+"hold_expires_at": string | null,
+"id": string,
+"outcome_recorded_at": string | null,
+"outcome_recorded_by": string | null,
+"price_kobo": number,
+"reference": string,
+"refund_due": boolean | null,
+"reschedule_of": string | null,
 "service_id": string,
 "service_name": string,
 "starts_at": string,
@@ -418,12 +486,66 @@ isOneToOne: false
 "current_barber_id":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"customer_cancel_booking":
+{ Args: { "p_booking_id": string }; Returns: {
+              "amount_kobo": number,
+"created_at": string,
+"id": string,
+"payment_id": string,
+"processed_at": string | null,
+"provider_refund_id": string | null,
+"status": Database["public"]['Enums']["refund_status"]
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "refunds"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "generate_booking_reference":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
 "is_owner":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"merge_guest_bookings":
+{ Args: { "p_user_id": string }; Returns: number
+                           },
+"move_booking":
+{ Args: { "p_hold_id": string }; Returns: {
+              "any_barber": boolean,
+"barber_id": string,
+"buffer_minutes": number,
+"busy_until": string,
+"cancelled_at": string | null,
+"cancelled_by": Database["public"]['Enums']["cancelled_by"] | null,
+"created_at": string,
+"customer_email": string,
+"customer_id": string | null,
+"customer_name": string,
+"duration_minutes": number,
+"ends_at": string,
+"guest_token_hash": string | null,
+"hold_expires_at": string | null,
+"id": string,
+"outcome_recorded_at": string | null,
+"outcome_recorded_by": string | null,
+"price_kobo": number,
+"reference": string,
+"refund_due": boolean | null,
+"reschedule_of": string | null,
+"service_id": string,
+"service_name": string,
+"starts_at": string,
+"status": Database["public"]['Enums']["booking_status"],
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "bookings"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "next_free_slots":
 { Args: { "p_service_id": string }; Returns: {
               "barber_id": string,"starts_at": string
@@ -470,7 +592,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "barber_status": "invited"|"active"|"inactive","booking_status": "pending_payment"|"expired"|"confirmed"|"completed"|"no_show"|"cancelled","cancelled_by": "customer"|"owner","payment_status": "pending"|"success"|"failed"|"abandoned","refund_status": "pending"|"processed"|"failed","user_role": "customer"|"barber"|"owner"
+            "auth_token_purpose": "verify_email"|"reset_password","barber_status": "invited"|"active"|"inactive","booking_status": "pending_payment"|"expired"|"confirmed"|"completed"|"no_show"|"cancelled","cancelled_by": "customer"|"owner","payment_status": "pending"|"success"|"failed"|"abandoned","refund_status": "pending"|"processed"|"failed","user_role": "customer"|"barber"|"owner"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -586,7 +708,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "barber_status": ["invited", "active", "inactive"],"booking_status": ["pending_payment", "expired", "confirmed", "completed", "no_show", "cancelled"],"cancelled_by": ["customer", "owner"],"payment_status": ["pending", "success", "failed", "abandoned"],"refund_status": ["pending", "processed", "failed"],"user_role": ["customer", "barber", "owner"]
+            "auth_token_purpose": ["verify_email", "reset_password"],"barber_status": ["invited", "active", "inactive"],"booking_status": ["pending_payment", "expired", "confirmed", "completed", "no_show", "cancelled"],"cancelled_by": ["customer", "owner"],"payment_status": ["pending", "success", "failed", "abandoned"],"refund_status": ["pending", "processed", "failed"],"user_role": ["customer", "barber", "owner"]
           }
         }
 } as const

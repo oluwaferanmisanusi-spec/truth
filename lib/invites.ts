@@ -9,7 +9,8 @@ export function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-function newToken() {
+/** 32 random bytes for an emailed link, plus the hash we store instead of it. */
+export function newToken() {
   const token = randomBytes(32).toString("base64url");
   return { token, hash: hashToken(token) };
 }

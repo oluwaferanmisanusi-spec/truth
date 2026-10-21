@@ -1,6 +1,6 @@
 // Session refresh for proxy.ts. Runs before every matched request so the auth cookie
-// stays fresh, and does an early (optimistic) redirect for owner pages.
-// The real permission check happens again in the owner layout.
+// stays fresh, and does an early (optimistic) redirect for owner and customer-account pages.
+// The real permission check happens again in each page.
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -43,6 +43,18 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/owner/login";
     url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  // Customer pages that need an account. Guest booking links don't.
+  const isCustomerPrivate =
+    pathname === "/verify-email" ||
+    pathname === "/bookings" ||
+    (pathname.startsWith("/bookings/") && !pathname.startsWith("/bookings/guest/"));
+  if (isCustomerPrivate && !isLoggedIn) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = `?next=${encodeURIComponent(pathname + request.nextUrl.search)}`;
     return NextResponse.redirect(url);
   }
 

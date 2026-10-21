@@ -1,18 +1,21 @@
 // Customer top and bottom bars (Figma "Top bar" and "Bottom bar"), phone width.
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, UserRound } from "lucide-react";
 
 const iconButton =
   "flex size-11 items-center justify-center rounded-full text-ink hover:bg-surface-muted " +
   "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
-/** Wordmark bar for Home and result screens. The account icon arrives with customer accounts. */
+/** Wordmark bar for Home and result screens. The person icon opens My bookings (or Log in). */
 export function BrandBar() {
   return (
-    <header className="flex h-14 items-center border-b border-border pr-1 pl-4">
+    <header className="flex h-14 items-center justify-between border-b border-border pr-1 pl-4">
       <Link href="/" className="font-display text-wordmark text-primary">
         Truth
+      </Link>
+      <Link href="/bookings" className={iconButton} aria-label="My bookings">
+        <UserRound aria-hidden size={24} />
       </Link>
     </header>
   );

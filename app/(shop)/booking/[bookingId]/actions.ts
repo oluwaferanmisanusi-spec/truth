@@ -7,6 +7,7 @@ import { settlePayment } from "@/lib/booking/payments";
 import { initializeTransaction } from "@/lib/paystack";
 import { shopToday } from "@/lib/format";
 import { siteUrl } from "@/lib/invites";
+import { getAccount } from "@/lib/auth/customer";
 
 export type DetailsState = {
   errors?: { name?: string; email?: string; form?: string };
@@ -15,11 +16,13 @@ export type DetailsState = {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// "Pay ₦8,000" (Figma 2.6/2.8): save the customer's details on the hold, then send them
-// to Paystack's checkout. Paystack brings them back to the confirming page.
+// "Pay ₦8,000" (Figma 2.6–2.8): save the customer's details on the hold, then send them
+// to Paystack's checkout. Paystack brings them back to the confirming page. Logged-in
+// customers pay with their account's details and the booking joins their account.
 export async function startPayment(bookingId: string, _prev: DetailsState | undefined, formData: FormData): Promise<DetailsState> {
-  const name = String(formData.get("name") ?? "").trim().replace(/\s+/g, " ");
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const account = await getAccount();
+  const name = (account?.full_name ?? String(formData.get("name") ?? "")).trim().replace(/\s+/g, " ");
+  const email = (account?.email ?? String(formData.get("email") ?? "")).trim().toLowerCase();
   const errors: DetailsState["errors"] = {};
   if (!name) errors.name = "Enter your full name";
   else if (name.length > 100) errors.name = "Enter a name of 100 characters or fewer";
@@ -32,7 +35,12 @@ export async function startPayment(bookingId: string, _prev: DetailsState | unde
   const admin = createAdminClient();
   const { error } = await admin
     .from("bookings")
-    .update({ customer_name: name, customer_email: email, updated_at: new Date().toISOString() })
+    .update({
+      customer_name: name,
+      customer_email: email,
+      customer_id: account?.id ?? null,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", bookingId)
     .eq("status", "pending_payment");
   if (error) throw error;

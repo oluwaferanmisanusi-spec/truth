@@ -14,8 +14,10 @@ import { buttonClass } from "@/components/ui";
 import { getBooking, type BookingView } from "@/lib/booking/data";
 import { formatDay, formatNaira, formatTime, shopToday } from "@/lib/format";
 import { DetailsForm } from "./details-form";
-import { HoldTimer } from "./hold-timer";
+import { HoldTimer } from "@/components/shop/hold-timer";
 import { releaseHold } from "./actions";
+import { logOut } from "../../(auth)/actions";
+import { getAccount } from "@/lib/auth/customer";
 
 type Props = PageProps<"/booking/[bookingId]">;
 
@@ -44,6 +46,7 @@ async function Booking({ params }: Pick<Props, "params">) {
   );
 
   if (booking.view === "pay") {
+    const account = await getAccount();
     return (
       <>
         <StepBar title="Details and payment" back={releaseHold.bind(null, booking.id)} />
@@ -52,11 +55,18 @@ async function Booking({ params }: Pick<Props, "params">) {
             bookingId={booking.id}
             priceLabel={formatNaira(booking.price_kobo)}
             defaults={{ name: booking.customer_name, email: booking.customer_email }}
+            account={account && { name: account.full_name, email: account.email }}
+            logOut={logOut.bind(null, `/booking/${booking.id}`)}
             summary={summary}
             progress={
               <div className="flex flex-col gap-3">
                 <Stepper step={4} />
                 <HoldTimer secondsLeft={booking.holdSecondsLeft} />
+                {account && !account.verified && (
+                  <Alert variant="info" title="Verify your email">
+                    We sent a link to {account.email}. You can finish this booking first.
+                  </Alert>
+                )}
               </div>
             }
           />

@@ -49,6 +49,7 @@ export async function listBookings(filters: BookingFilters) {
     .gte("starts_at", shopDayStart(filters.from))
     .lt("starts_at", shopDayStart(addDays(filters.to, 1)))
     .neq("status", "expired")
+    .is("reschedule_of", null) // a customer's held new time, not a booking of its own
     .order("starts_at")
     .order("customer_name")
     .limit(1000);
