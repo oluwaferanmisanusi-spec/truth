@@ -9,10 +9,14 @@ export function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export function newInviteToken(now = new Date()) {
+function newToken() {
   const token = randomBytes(32).toString("base64url");
+  return { token, hash: hashToken(token) };
+}
+
+export function newInviteToken(now = new Date()) {
   const expiresAt = new Date(now.getTime() + INVITE_DAYS * 24 * 60 * 60 * 1000);
-  return { token, hash: hashToken(token), expiresAt };
+  return { ...newToken(), expiresAt };
 }
 
 export function siteUrl(path: string) {
@@ -22,4 +26,13 @@ export function siteUrl(path: string) {
 
 export function barberInviteUrl(token: string) {
   return siteUrl(`/barber/invite/${token}`);
+}
+
+/** The "manage your booking" link emailed to guests (page built with customer accounts). */
+export function newGuestLinkToken() {
+  return newToken();
+}
+
+export function guestBookingUrl(token: string) {
+  return siteUrl(`/bookings/guest/${token}`);
 }

@@ -7,6 +7,7 @@ const VARIANTS = {
   success: { icon: CircleCheck, className: "bg-success-tint", iconClass: "text-success" },
   warning: { icon: CircleAlert, className: "bg-warning-tint", iconClass: "text-warning" },
   info: { icon: Info, className: "bg-primary-tint", iconClass: "text-primary" },
+  danger: { icon: CircleAlert, className: "bg-danger-tint", iconClass: "text-danger" },
 };
 
 export function Alert({ variant = "success", title, children, role = "status" }: {

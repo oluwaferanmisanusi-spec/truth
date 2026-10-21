@@ -215,14 +215,14 @@ isOneToOne: false
                   ]
                 },"payments": {
                   Row: {
-                    "amount_kobo": number,"booking_id": string,"created_at": string,"id": string,"paid_at": string | null,"provider": string,"raw": Json | null,"reference": string,"status": Database["public"]['Enums']["payment_status"]
+                    "amount_kobo": number,"authorization_url": string | null,"booking_id": string,"created_at": string,"id": string,"paid_at": string | null,"provider": string,"raw": Json | null,"reference": string,"status": Database["public"]['Enums']["payment_status"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "amount_kobo": number,"booking_id": string,"created_at"?: string,"id"?: string,"paid_at"?: string | null,"provider"?: string,"raw"?: Json | null,"reference": string,"status"?: Database["public"]['Enums']["payment_status"]
+                    "amount_kobo": number,"authorization_url"?: string | null,"booking_id": string,"created_at"?: string,"id"?: string,"paid_at"?: string | null,"provider"?: string,"raw"?: Json | null,"reference": string,"status"?: Database["public"]['Enums']["payment_status"]
                   }
                   Update: {
-                    "amount_kobo"?: number,"booking_id"?: string,"created_at"?: string,"id"?: string,"paid_at"?: string | null,"provider"?: string,"raw"?: Json | null,"reference"?: string,"status"?: Database["public"]['Enums']["payment_status"]
+                    "amount_kobo"?: number,"authorization_url"?: string | null,"booking_id"?: string,"created_at"?: string,"id"?: string,"paid_at"?: string | null,"provider"?: string,"raw"?: Json | null,"reference"?: string,"status"?: Database["public"]['Enums']["payment_status"]
                   }
                   Relationships: [
                     {
@@ -289,14 +289,14 @@ isOneToOne: false
                   ]
                 },"shop_settings": {
                   Row: {
-                    "address": string,"hold_minutes": number,"id": boolean,"name": string,"no_show_grace_minutes": number,"refund_window_hours": number,"time_zone": string,"updated_at": string
+                    "address": string,"booking_window_days": number,"hold_minutes": number,"id": boolean,"min_notice_hours": number,"name": string,"no_show_grace_minutes": number,"refund_window_hours": number,"slot_step_minutes": number,"time_zone": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "address": string,"hold_minutes"?: number,"id"?: boolean,"name": string,"no_show_grace_minutes"?: number,"refund_window_hours"?: number,"time_zone"?: string,"updated_at"?: string
+                    "address": string,"booking_window_days"?: number,"hold_minutes"?: number,"id"?: boolean,"min_notice_hours"?: number,"name": string,"no_show_grace_minutes"?: number,"refund_window_hours"?: number,"slot_step_minutes"?: number,"time_zone"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "address"?: string,"hold_minutes"?: number,"id"?: boolean,"name"?: string,"no_show_grace_minutes"?: number,"refund_window_hours"?: number,"time_zone"?: string,"updated_at"?: string
+                    "address"?: string,"booking_window_days"?: number,"hold_minutes"?: number,"id"?: boolean,"min_notice_hours"?: number,"name"?: string,"no_show_grace_minutes"?: number,"refund_window_hours"?: number,"slot_step_minutes"?: number,"time_zone"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -373,7 +373,49 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "current_barber_id":
+            "available_slots":
+{ Args: { "p_barber_id": string,"p_from": string,"p_service_id": string,"p_to": string }; Returns: {
+              "barber_id": string,"starts_at": string
+            }[]
+                           },
+"booking_is_live":
+{ Args: { "p_hold_expires_at": string,"p_status": Database["public"]['Enums']["booking_status"] }; Returns: boolean
+                           },
+"create_hold":
+{ Args: { "p_barber_id": string,"p_customer_id"?: string,"p_service_id": string,"p_starts_at": string }; Returns: {
+              "any_barber": boolean,
+"barber_id": string,
+"buffer_minutes": number,
+"busy_until": string,
+"cancelled_at": string | null,
+"cancelled_by": Database["public"]['Enums']["cancelled_by"] | null,
+"created_at": string,
+"customer_email": string,
+"customer_id": string | null,
+"customer_name": string,
+"duration_minutes": number,
+"ends_at": string,
+"guest_token_hash": string | null,
+"hold_expires_at": string | null,
+"id": string,
+"outcome_recorded_at": string | null,
+"outcome_recorded_by": string | null,
+"price_kobo": number,
+"reference": string,
+"refund_due": boolean | null,
+"service_id": string,
+"service_name": string,
+"starts_at": string,
+"status": Database["public"]['Enums']["booking_status"],
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "bookings"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"current_barber_id":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
 "generate_booking_reference":
@@ -381,6 +423,11 @@ isOneToOne: false
                            },
 "is_owner":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"next_free_slots":
+{ Args: { "p_service_id": string }; Returns: {
+              "barber_id": string,"starts_at": string
+            }[]
                            },
 "owner_cancel_booking":
 { Args: { "p_booking_id": string }; Returns: {
@@ -417,6 +464,9 @@ isOneToOne: false
 { Args: { "p_from": string,"p_to": string }; Returns: {
               "barber_id": string,"bookings": number,"cancelled": number,"completed": number,"full_name": string,"no_shows": number,"paid_kobo": number,"refunded_kobo": number
             }[]
+                           },
+"record_payment":
+{ Args: { "p_amount_kobo": number,"p_paid_at": string,"p_raw": Json,"p_reference": string,"p_success": boolean }; Returns: string
                            }
           }
           Enums: {
