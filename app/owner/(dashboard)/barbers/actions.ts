@@ -5,10 +5,10 @@ import { refresh } from "next/cache";
 import { requireOwner } from "@/lib/auth/owner";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { barberInviteUrl, newInviteToken } from "@/lib/invites";
+import { parseWeekHours } from "@/lib/owner/hours";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 // TODO(phase 3, Resend): email the link instead of returning it to the screen.
 export type InviteResult = { error?: string; email?: string; link?: string; expiresAt?: string } | undefined;
@@ -71,18 +71,9 @@ export async function saveBarber(_prev: BarberFormState, formData: FormData): Pr
 
   const serviceIds = formData.getAll("service").map(String).filter((s) => UUID.test(s));
 
-  const dayErrors: Record<number, string> = {};
-  const hours = [0, 1, 2, 3, 4, 5, 6].map((weekday) => {
-    const isOpen = formData.get(`open-${weekday}`) === "on";
-    const startsAt = String(formData.get(`start-${weekday}`) ?? "");
-    const endsAt = String(formData.get(`end-${weekday}`) ?? "");
-    if (isOpen) {
-      if (!TIME.test(startsAt) || !TIME.test(endsAt)) dayErrors[weekday] = "Enter a start and finish time.";
-      else if (endsAt <= startsAt) dayErrors[weekday] = "The finish time must be after the start time.";
-    }
-    return { weekday, is_open: isOpen, starts_at: isOpen ? startsAt : null, ends_at: isOpen ? endsAt : null };
-  });
-  if (Object.keys(dayErrors).length) return { error: "Check the working hours highlighted below.", dayErrors };
+  const { days, dayErrors, ok } = parseWeekHours(formData);
+  if (!ok) return { error: "Check the working hours highlighted below.", dayErrors };
+  const hours = days.map((d) => ({ weekday: d.weekday, is_open: d.isOpen, starts_at: d.start, ends_at: d.end }));
 
   const admin = createAdminClient();
   const { error } = await admin.rpc("owner_save_barber", {

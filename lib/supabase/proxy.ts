@@ -4,7 +4,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const OWNER_PUBLIC_PATHS = ["/owner/login", "/owner/forgot-password"];
+const OWNER_PUBLIC_PATHS = ["/owner/login", "/owner/forgot-password", "/owner/reset-password"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

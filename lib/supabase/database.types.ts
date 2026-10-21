@@ -407,6 +407,9 @@ isOneToOne: false
 "owner_save_barber":
 { Args: { "p_barber_id": string,"p_hours": Json,"p_service_ids": (string)[] }; Returns: undefined
                            },
+"owner_save_shop_settings":
+{ Args: { "p_hours": Json,"p_time_zone": string }; Returns: undefined
+                           },
 "owner_set_barber_active":
 { Args: { "p_active": boolean,"p_barber_id": string }; Returns: undefined
                            },

@@ -1,17 +1,7 @@
 // Data for the owner Barbers screens (Figma 5.8–5.11). Reads through the owner's session.
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-
-/** Monday first, as on the barber page. 0 = Sunday (Postgres day-of-week). */
-export const WEEK = [
-  { weekday: 1, name: "Monday" },
-  { weekday: 2, name: "Tuesday" },
-  { weekday: 3, name: "Wednesday" },
-  { weekday: 4, name: "Thursday" },
-  { weekday: 5, name: "Friday" },
-  { weekday: 6, name: "Saturday" },
-  { weekday: 0, name: "Sunday" },
-];
+import { WEEK } from "@/lib/owner/hours";
 
 export function initials(name: string | null) {
   if (!name) return "–";
