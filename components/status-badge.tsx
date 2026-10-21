@@ -25,3 +25,19 @@ export function BookingStatusBadge({ status }: { status: BookingStatus }) {
     </span>
   );
 }
+
+// Record status for services and barbers.
+const RECORD_STATUS = {
+  active: { label: "Active", className: "bg-success-tint text-success" },
+  inactive: { label: "Inactive", className: "bg-neutral-tint text-ink-muted" },
+  invited: { label: "Invited", className: "bg-warning-tint text-warning" },
+} as const;
+
+export function RecordStatusBadge({ status }: { status: keyof typeof RECORD_STATUS }) {
+  const { label, className } = RECORD_STATUS[status];
+  return (
+    <span className={`inline-flex rounded-full px-2 py-1 text-caption font-medium whitespace-nowrap ${className}`}>
+      {label}
+    </span>
+  );
+}
