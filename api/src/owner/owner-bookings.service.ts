@@ -4,6 +4,7 @@ import { addDays, shopDayStart } from '../common/format.js';
 import type {
   BookingFilterOptions,
   BookingStatus,
+  OutcomesDue,
   OwnerBooking,
   Stats,
 } from '../contracts/owner.js';
@@ -18,7 +19,8 @@ export type BookingFilters = {
   to: string;
   barber?: string;
   service?: string;
-  status?: BookingStatus;
+  /** needs_outcome: confirmed appointments that have started with no outcome recorded. */
+  status?: BookingStatus | 'needs_outcome';
 };
 
 @Injectable()
@@ -45,7 +47,11 @@ export class OwnerBookingsService {
       .limit(1000);
     if (filters.barber) query = query.eq('barber_id', filters.barber);
     if (filters.service) query = query.eq('service_id', filters.service);
-    if (filters.status) query = query.eq('status', filters.status);
+    if (filters.status === 'needs_outcome')
+      query = query
+        .eq('status', 'confirmed')
+        .lte('starts_at', new Date().toISOString());
+    else if (filters.status) query = query.eq('status', filters.status);
 
     const { data, error } = await query;
     if (error) throw error;
@@ -63,6 +69,35 @@ export class OwnerBookingsService {
       // Owners can cancel confirmed bookings that haven't started (the database re-checks this).
       cancellable: b.status === 'confirmed' && Date.parse(b.starts_at) > now,
     }));
+  }
+
+  /** The owner's reminder to chase barbers for outcomes they haven't recorded. */
+  async outcomesDue(): Promise<OutcomesDue> {
+    const { data, error } = await this.supabase.admin
+      .from('bookings')
+      .select(
+        'starts_at, barber_id, barbers!bookings_barber_id_fkey(full_name)',
+      )
+      .eq('status', 'confirmed')
+      .is('reschedule_of', null)
+      .lte('starts_at', new Date().toISOString())
+      .order('starts_at');
+    if (error) throw error;
+    const byBarber = new Map<string, OutcomesDue['barbers'][number]>();
+    for (const b of data) {
+      const entry = byBarber.get(b.barber_id) ?? {
+        id: b.barber_id,
+        name: b.barbers?.full_name ?? 'Unknown barber',
+        count: 0,
+      };
+      entry.count += 1;
+      byBarber.set(b.barber_id, entry);
+    }
+    return {
+      total: data.length,
+      oldest: data[0]?.starts_at ?? null,
+      barbers: [...byBarber.values()].sort((a, b) => b.count - a.count),
+    };
   }
 
   async filterOptions(): Promise<BookingFilterOptions> {

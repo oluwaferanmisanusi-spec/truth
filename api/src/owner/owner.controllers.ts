@@ -19,6 +19,7 @@ import type {
   BookingFilterOptions,
   HolidayAdded,
   Invite,
+  OutcomesDue,
   OwnerBarberDetail,
   OwnerBarbers,
   OwnerBooking,
@@ -46,7 +47,14 @@ const BookingQuery = z.object({
   barber: Id.optional(),
   service: Id.optional(),
   status: z
-    .enum(['pending_payment', 'confirmed', 'completed', 'no_show', 'cancelled'])
+    .enum([
+      'pending_payment',
+      'confirmed',
+      'completed',
+      'no_show',
+      'cancelled',
+      'needs_outcome',
+    ])
     .optional(),
 });
 
@@ -62,6 +70,11 @@ export class OwnerBookingsController {
     @Query({ schema: BookingQuery }) q: z.output<typeof BookingQuery>,
   ): Promise<OwnerBooking[]> {
     return this.bookings.list(q);
+  }
+
+  @Get('outcomes-due')
+  outcomesDue(): Promise<OutcomesDue> {
+    return this.bookings.outcomesDue();
   }
 
   @Get('booking-filters')

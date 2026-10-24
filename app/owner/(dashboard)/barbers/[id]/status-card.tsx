@@ -21,13 +21,13 @@ export function BarberStatusCard({ id, firstName, status, upcoming, bookingsHref
   const [message, setMessage] = useState<{ ok: boolean; text: string }>();
   const [pending, startTransition] = useTransition();
 
-  const run = (fn: () => Promise<{ error?: string } | undefined>, okText?: string) =>
+  const run = <R extends { error?: string } | undefined>(fn: () => Promise<R>, okText?: string | ((result: R) => string)) =>
     startTransition(async () => {
       const result = await fn();
       if (result?.error) setMessage({ ok: false, text: result.error });
       else {
         setOpen(false);
-        if (okText) setMessage({ ok: true, text: okText });
+        if (okText) setMessage({ ok: true, text: typeof okText === "function" ? okText(result) : okText });
       }
     });
 
@@ -38,7 +38,7 @@ export function BarberStatusCard({ id, firstName, status, upcoming, bookingsHref
         <p className="text-small text-ink-muted">
           {status === "invited"
             ? `They haven’t set up their account yet.${inviteExpiry ? ` The invite expires on ${inviteExpiry}.` : " The invite has expired."}`
-            : "Deactivated barbers can’t log in and aren’t shown to customers. Their past bookings stay in your records."}
+            : "Deactivated barbers can’t see their schedule and aren’t shown to customers. They can still book as customers, and their past bookings stay in your records."}
         </p>
       </div>
       <div><RecordStatusBadge status={status} /></div>
@@ -63,7 +63,15 @@ export function BarberStatusCard({ id, firstName, status, upcoming, bookingsHref
         )}
         {status === "invited" && (
           <button type="button" className={buttonClass.secondary} disabled={pending}
-            onClick={() => run(() => resendInvite(id), "Invite resent. Copy the new link from the Barbers list for now.")}>
+            onClick={() =>
+              run(
+                () => resendInvite(id),
+                (r) =>
+                  r?.emailed
+                    ? `Invite resent to ${r.email}. The old link no longer works.`
+                    : "Invite resent, but the email didn’t go out. Copy the new link from the Barbers list and send it yourself.",
+              )
+            }>
             {pending ? "Resending…" : "Resend invite"}
           </button>
         )}

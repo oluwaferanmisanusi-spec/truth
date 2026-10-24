@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AccountsModule } from './accounts/accounts.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { BarberModule } from './barber/barber.module.js';
 import { BookingModule } from './booking/booking.module.js';
 import { CommonModule } from './common/common.module.js';
 import { validateEnv } from './config/env.js';
@@ -25,6 +26,7 @@ import { SupabaseModule } from './supabase/supabase.module.js';
     ShopModule,
     BookingModule,
     OwnerModule,
+    BarberModule,
   ],
   controllers: [HealthController],
 })

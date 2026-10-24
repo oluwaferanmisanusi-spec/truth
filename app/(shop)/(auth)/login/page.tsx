@@ -24,7 +24,8 @@ async function Login({ searchParams }: Pick<Props, "searchParams">) {
   const query = await searchParams;
   const next = one(query.next);
   const hold = await getActiveHold(one(query.hold));
-  if (await getAccount()) redirect(hold ? `/booking/${hold.id}` : safeNext(next));
+  const account = await getAccount();
+  if (account) redirect(hold ? `/booking/${hold.id}` : safeNext(next, account.barberId ? "/barber" : "/bookings"));
 
   const carry = hold ? `?hold=${hold.id}` : next ? `?next=${encodeURIComponent(safeNext(next))}` : "";
   return (

@@ -6,8 +6,10 @@ import type { Invite } from "@api/owner";
 import { api, ApiError } from "@/lib/api/client";
 import { parseWeekHours } from "@/lib/owner/hours";
 
-// TODO(phase 5): email the link instead of returning it to the screen.
-export type InviteResult = { error?: string; email?: string; link?: string; expiresAt?: string } | undefined;
+/** The invite is emailed; the link also comes back so the owner can share it if the email didn't go. */
+export type InviteResult =
+  | { error?: string; email?: string; link?: string; expiresAt?: string; emailed?: boolean }
+  | undefined;
 
 /** Figma 5.9 Invite barber. */
 export async function inviteBarber(_prev: InviteResult, formData: FormData): Promise<InviteResult> {

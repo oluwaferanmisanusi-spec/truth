@@ -26,11 +26,20 @@ export class SupabaseService {
     const userId = data?.claims.sub;
     if (error || !userId) return null;
 
-    const { data: profile } = await this.admin
-      .from('profiles')
-      .select('id, full_name, email, role, email_verified_at')
-      .eq('id', userId)
-      .maybeSingle();
+    const [{ data: profile }, { data: barber }] = await Promise.all([
+      this.admin
+        .from('profiles')
+        .select('id, full_name, email, role, email_verified_at')
+        .eq('id', userId)
+        .maybeSingle(),
+      // Deactivated barbers keep the link to their login but lose the barber side.
+      this.admin
+        .from('barbers')
+        .select('id')
+        .eq('profile_id', userId)
+        .eq('status', 'active')
+        .maybeSingle(),
+    ]);
     if (!profile) return null;
     return {
       id: profile.id,
@@ -38,6 +47,7 @@ export class SupabaseService {
       fullName: profile.full_name,
       role: profile.role,
       verified: Boolean(profile.email_verified_at),
+      barberId: barber?.id ?? null,
     };
   }
 }

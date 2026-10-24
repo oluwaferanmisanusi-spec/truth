@@ -1,21 +1,25 @@
 // Data for the owner Bookings screen (Figma 5.1), from the API's /owner routes.
 import "server-only";
-import type { BookingFilterOptions, OwnerBooking } from "@api/owner";
+import type { BookingFilterOptions, OutcomesDue, OwnerBooking } from "@api/owner";
 import { api } from "@/lib/api/client";
 import { isIsoDate, shopToday } from "@/lib/format";
-import { BOOKING_STATUS_LABELS, type BookingStatus } from "@/components/status-badge";
+import { BOOKING_STATUS_LABELS } from "@/components/status-badge";
 
 export type BookingFilters = {
   from: string;
   to: string;
   barber?: string;
   service?: string;
-  status?: BookingStatus;
+  status?: FilterStatus;
 };
 
-/** Statuses the owner can filter by. Expired holds never show in the table. */
-export const FILTER_STATUSES = ["pending_payment", "confirmed", "completed", "no_show", "cancelled"] as const satisfies
-  readonly BookingStatus[];
+/**
+ * Statuses the owner can filter by. Expired holds never show in the table. "Needs outcome" is
+ * confirmed appointments that have started without the barber marking them.
+ */
+export const FILTER_STATUSES = ["pending_payment", "confirmed", "completed", "no_show", "cancelled", "needs_outcome"] as const;
+type FilterStatus = (typeof FILTER_STATUSES)[number];
+const FILTER_LABELS: Record<FilterStatus, string> = { ...BOOKING_STATUS_LABELS, needs_outcome: "Needs outcome" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -35,7 +39,7 @@ export function parseFilters(params: SearchParams): BookingFilters {
     to,
     barber: UUID.test(one("barber") ?? "") ? one("barber") : undefined,
     service: UUID.test(one("service") ?? "") ? one("service") : undefined,
-    status: (FILTER_STATUSES as readonly string[]).includes(status ?? "") ? (status as BookingStatus) : undefined,
+    status: (FILTER_STATUSES as readonly string[]).includes(status ?? "") ? (status as FilterStatus) : undefined,
   };
 }
 
@@ -49,5 +53,9 @@ export async function listBookings(filters: BookingFilters) {
 
 export async function listFilterOptions() {
   const options = await api<BookingFilterOptions>("/owner/booking-filters");
-  return { ...options, statuses: FILTER_STATUSES.map((s) => ({ value: s, label: BOOKING_STATUS_LABELS[s] })) };
+  return { ...options, statuses: FILTER_STATUSES.map((s) => ({ value: s, label: FILTER_LABELS[s] })) };
+}
+
+export async function getOutcomesDue() {
+  return api<OutcomesDue>("/owner/outcomes-due");
 }

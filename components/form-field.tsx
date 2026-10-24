@@ -17,7 +17,8 @@ function describedBy(id: string, helper?: string, error?: string) {
 
 const box = (error?: string, extra = "") =>
   `w-full rounded-md border bg-surface px-4 text-body text-ink placeholder:text-ink-muted ` +
-  `focus:outline-3 focus:outline-offset-2 focus:outline-focus ${error ? "border-danger" : "border-border-input"} ${extra}`;
+  `focus:outline-3 focus:outline-offset-2 focus:outline-focus disabled:cursor-not-allowed disabled:bg-disabled-bg ` +
+  `disabled:text-ink-muted ${error ? "border-danger" : "border-border-input"} ${extra}`;
 
 function Frame({ id, label, helper, error, className, children }: FieldProps & { children: ReactNode }) {
   return (

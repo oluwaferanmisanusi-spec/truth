@@ -25,6 +25,14 @@ export type OwnerBooking = {
 
 export type Option = { value: string; label: string };
 
+/** GET /owner/outcomes-due: appointments that have started but the barber hasn't marked. */
+export type OutcomesDue = {
+  total: number;
+  /** Start of the oldest one, so "Show them" can cover them all. */
+  oldest: string | null;
+  barbers: { id: string; name: string; count: number }[];
+};
+
 /** GET /owner/booking-filters */
 export type BookingFilterOptions = { barbers: Option[]; services: Option[] };
 
@@ -103,8 +111,14 @@ export type OwnerBarberDetail = {
   inviteExpiresAt: string | null;
 };
 
-/** POST /owner/barber-invites and …/resend-invite: the link to share until Resend sends it. */
-export type Invite = { email: string; link: string; expiresAt: string };
+/** POST /owner/barber-invites and …/resend-invite: the link, also emailed to the barber. */
+export type Invite = {
+  email: string;
+  link: string;
+  expiresAt: string;
+  /** False if the email didn't go out, so the owner knows to share the link themselves. */
+  emailed: boolean;
+};
 
 /** GET /owner/settings (Figma 5.12) */
 export type ShopSettings = {

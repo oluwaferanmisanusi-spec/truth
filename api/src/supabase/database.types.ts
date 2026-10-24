@@ -772,6 +772,14 @@ export type Database = {
       };
     };
     Functions: {
+      accept_barber_invite: {
+        Args: {
+          p_full_name: string;
+          p_profile_id: string;
+          p_token_hash: string;
+        };
+        Returns: string;
+      };
       available_slots: {
         Args: {
           p_barber_id: string;
@@ -784,12 +792,95 @@ export type Database = {
           starts_at: string;
         }[];
       };
+      barber_block_days: {
+        Args: {
+          p_barber_id: string;
+          p_from: string;
+          p_reason: string;
+          p_to: string;
+        };
+        Returns: number;
+      };
+      barber_block_time: {
+        Args: {
+          p_barber_id: string;
+          p_date: string;
+          p_from: string;
+          p_reason: string;
+          p_to: string;
+        };
+        Returns: {
+          barber_id: string;
+          created_at: string;
+          ends_at: string;
+          id: string;
+          is_whole_day: boolean;
+          reason: string | null;
+          starts_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'time_blocks';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      barber_record_outcome: {
+        Args: {
+          p_barber_id: string;
+          p_booking_id: string;
+          p_outcome: Database['public']['Enums']['booking_status'];
+        };
+        Returns: {
+          any_barber: boolean;
+          barber_id: string;
+          buffer_minutes: number;
+          busy_until: string;
+          cancelled_at: string | null;
+          cancelled_by: Database['public']['Enums']['cancelled_by'] | null;
+          created_at: string;
+          customer_email: string;
+          customer_id: string | null;
+          customer_name: string;
+          duration_minutes: number;
+          ends_at: string;
+          guest_token_hash: string | null;
+          hold_expires_at: string | null;
+          id: string;
+          outcome_recorded_at: string | null;
+          outcome_recorded_by: string | null;
+          price_kobo: number;
+          reference: string;
+          refund_due: boolean | null;
+          reschedule_of: string | null;
+          service_id: string;
+          service_name: string;
+          starts_at: string;
+          status: Database['public']['Enums']['booking_status'];
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'bookings';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       booking_is_live: {
         Args: {
           p_hold_expires_at: string;
           p_status: Database['public']['Enums']['booking_status'];
         };
         Returns: boolean;
+      };
+      check_block_range: {
+        Args: {
+          p_barber_id: string;
+          p_ends_at: string;
+          p_replace_blocks: boolean;
+          p_starts_at: string;
+        };
+        Returns: undefined;
       };
       create_hold: {
         Args: {
@@ -894,6 +985,7 @@ export type Database = {
         Returns: string;
       };
       is_owner: { Args: Record<PropertyKey, never>; Returns: boolean };
+      lock_barber_time: { Args: { p_barber_id: string }; Returns: undefined };
       merge_guest_bookings: { Args: { p_user_id: string }; Returns: number };
       move_booking: {
         Args: { p_hold_id: string };

@@ -20,12 +20,13 @@ From the repo root, `npm run dev:api` does the same.
 |---|---|
 | `main.ts`, `app.module.ts` | Starts the server; plugs the modules together |
 | `config/` | Settings check at start-up (`env.ts`); input validation (`validation.ts`) |
-| `auth/` | The guard on every route, `@Public()` / `@Roles()` / `@CurrentUser()`, `GET /me` |
+| `auth/` | The guard on every route, `@Public()` / `@Roles()` / `@CurrentUser()`, `GET /me`. A barber is anyone with an active `barbers` row linked to their login (`Me.barberId`), not a profile role, so the same login also books as a customer |
 | `supabase/` | The one database connection (service role) and generated types |
 | `shop/` | `GET /shop`, `GET /services` (public) |
 | `booking/` | Booking flow (holds, Paystack, webhook) and managing a booking (account + guest link) |
 | `accounts/` | Sign up, email verification, password reset (own one-time links, emailed via Resend) |
 | `owner/` | Owner screens under `/owner/…`, all `@Roles('owner')` |
+| `barber/` | Invite links (`/barber-invites/…`) and the barber's own schedule, outcomes and blocks under `/barber/…`, all `@Roles('barber')` |
 | `common/`, `email/`, `paystack/` | Shared: shop rules, site links, tokens, email layout, Paystack client |
 | `health/` | `GET /health` |
 | `contracts/` | Reply shapes, imported by the website as types |

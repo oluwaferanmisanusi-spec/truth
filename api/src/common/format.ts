@@ -81,3 +81,27 @@ export function isIsoDate(value: unknown): value is string {
     !Number.isNaN(Date.parse(value))
   );
 }
+
+/** 0 = Sunday … 6 = Saturday, as in the database, for a 'YYYY-MM-DD'. */
+export function weekdayOf(isoDate: string) {
+  return new Date(`${isoDate}T12:00:00Z`).getUTCDay();
+}
+
+/** The Monday on or before a 'YYYY-MM-DD'. */
+export function mondayOf(isoDate: string) {
+  return addDays(isoDate, -((weekdayOf(isoDate) + 6) % 7));
+}
+
+/** ['2026-10-16', '2026-10-17'] → 'Fri 16 and Sat 17 Oct'; more than 3 days → 'between … and …'. */
+export function formatDayList(isoDates: string[]) {
+  const labels = isoDates.map((d) => formatDay(`${d}T12:00:00Z`));
+  const month = (label: string) => label.split(' ')[2];
+  const sameMonth = new Set(labels.map(month)).size === 1;
+  const short = labels.map((l, i) =>
+    sameMonth && i < labels.length - 1 ? l.split(' ').slice(0, 2).join(' ') : l,
+  );
+  if (short.length > 3) return `between ${short[0]} and ${short.at(-1)}`;
+  if (short.length > 1)
+    return `on ${short.slice(0, -1).join(', ')} and ${short.at(-1)}`;
+  return `on ${short[0] ?? ''}`;
+}

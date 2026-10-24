@@ -15,11 +15,14 @@ const owner: Me = {
   fullName: 'Owner',
   role: 'owner',
   verified: true,
+  barberId: null,
 };
 const customer: Me = { ...owner, id: 'u2', role: 'customer' };
+const barber: Me = { ...customer, id: 'u3', barberId: 'b1' };
 const tokens: Record<string, Me> = {
   'owner-token': owner,
   'customer-token': customer,
+  'barber-token': barber,
 };
 
 const supabase = {
@@ -73,5 +76,18 @@ describe('AuthGuard', () => {
     expect(await run({ roles: ['owner'] }, 'Bearer owner-token').result).toBe(
       true,
     );
+  });
+
+  it('lets only active barbers through @Roles(barber), and they can still use customer routes', async () => {
+    expect(await run({ roles: ['barber'] }, 'Bearer barber-token').result).toBe(
+      true,
+    );
+    await expect(
+      run({ roles: ['barber'] }, 'Bearer customer-token').result,
+    ).rejects.toThrow(ForbiddenException);
+    await expect(
+      run({ roles: ['owner'] }, 'Bearer barber-token').result,
+    ).rejects.toThrow(ForbiddenException);
+    expect(await run({}, 'Bearer barber-token').result).toBe(true);
   });
 });

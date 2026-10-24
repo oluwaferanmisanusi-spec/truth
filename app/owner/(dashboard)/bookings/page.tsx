@@ -6,7 +6,15 @@ import { PageHeader } from "@/components/owner/page-header";
 import { BookingStatusBadge } from "@/components/status-badge";
 import { buttonClass } from "@/components/ui";
 import { formatDay, formatNaira, formatTime, shopToday, SHOP_TIME_ZONE_LABEL } from "@/lib/format";
-import { listBookings, listFilterOptions, parseFilters, type BookingFilters as Filters } from "@/lib/owner/bookings";
+import { Alert } from "@/components/alert";
+import type { OutcomesDue } from "@api/owner";
+import {
+  getOutcomesDue,
+  listBookings,
+  listFilterOptions,
+  parseFilters,
+  type BookingFilters as Filters,
+} from "@/lib/owner/bookings";
 import { BookingFilters } from "./filters";
 import { CancelBookingButton } from "./cancel-button";
 
@@ -31,13 +39,14 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
   await connection(); // "today" depends on the clock, so this renders per request
   const filters = parseFilters(await searchParams);
   const today = shopToday();
-  const [bookings, options] = await Promise.all([listBookings(filters), listFilterOptions()]);
+  const [bookings, options, due] = await Promise.all([listBookings(filters), listFilterOptions(), getOutcomesDue()]);
   const isFiltered = Boolean(
     filters.barber || filters.service || filters.status || filters.from !== today || filters.to !== today,
   );
 
   return (
     <>
+      {filters.status !== "needs_outcome" && <OutcomesReminder due={due} today={today} />}
       <div className="flex flex-col gap-4">
         <BookingFilters values={filters} today={today} options={options} isFiltered={isFiltered} />
         <p className="text-small text-ink-muted" aria-live="polite">
@@ -113,6 +122,24 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
         {bookings.length === 0 && <NoResults filters={filters} />}
       </div>
     </>
+  );
+}
+
+// Reminder to chase barbers for outcomes (decided with the shop on 2026-10-24; not in the
+// Figma file, built from the Alert component).
+function OutcomesReminder({ due, today }: { due: OutcomesDue; today: string }) {
+  if (due.total === 0 || !due.oldest) return null;
+  const who = due.barbers.map((b) => `${b.name} ${b.count}`).join(", ");
+  const href = `/owner/bookings?status=needs_outcome&from=${shopToday(new Date(due.oldest))}&to=${today}`;
+  return (
+    <Alert variant="warning" title={`${due.total} past ${due.total === 1 ? "appointment has" : "appointments have"} no outcome`}>
+      <p>
+        Not yet marked as completed or no-show: {who}. Remind your barbers to record them, so your stats stay accurate.{" "}
+        <a href={href} className="font-medium text-primary underline underline-offset-2 hover:text-primary-hover">
+          Show them
+        </a>
+      </p>
+    </Alert>
   );
 }
 

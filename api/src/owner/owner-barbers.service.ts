@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { SiteService } from '../common/site.service.js';
+import { EmailService } from '../email/email.service.js';
 import { newToken } from '../common/tokens.js';
 import type {
   Invite,
@@ -12,6 +13,7 @@ import type {
   OwnerBarbers,
 } from '../contracts/owner.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
+import { barberInviteEmail } from './barber-emails.js';
 import { weekFrom, type WeekHours } from './week.js';
 
 /** Barber invites work for 7 days. */
@@ -32,6 +34,7 @@ export class OwnerBarbersService {
   constructor(
     private readonly supabase: SupabaseService,
     private readonly site: SiteService,
+    private readonly email: EmailService,
   ) {}
 
   async list(): Promise<OwnerBarbers> {
@@ -122,7 +125,7 @@ export class OwnerBarbersService {
     };
   }
 
-  /** Invite barber (5.9). Returns the link to share; emailing it comes with the barber screens. */
+  /** Invite barber (5.9). Emails the link, and returns it so the owner can also share it. */
   async invite(email: string): Promise<Invite> {
     const { token, hash, expiresAt } = this.newInvite();
     const { error } = await this.supabase.admin.rpc('owner_invite_barber', {
@@ -138,7 +141,7 @@ export class OwnerBarbersService {
       });
     }
     if (error) throw error;
-    return { email, link: this.site.barberInviteUrl(token), expiresAt };
+    return this.sendInvite(email, token, expiresAt);
   }
 
   /** Invite resent (5.8b): a new link; the old one stops working. */
@@ -163,11 +166,7 @@ export class OwnerBarbersService {
       });
     }
     if (error) throw error;
-    return {
-      email: barber.email,
-      link: this.site.barberInviteUrl(token),
-      expiresAt,
-    };
+    return this.sendInvite(barber.email, token, expiresAt);
   }
 
   /** Services ticked and working hours, saved together (5.10). */
@@ -205,6 +204,16 @@ export class OwnerBarbersService {
       throw new NotFoundException('Barber not found');
     if (error) throw error;
     return { active };
+  }
+
+  private async sendInvite(
+    email: string,
+    token: string,
+    expiresAt: string,
+  ): Promise<Invite> {
+    const link = this.site.barberInviteUrl(token);
+    const emailed = await this.email.send(barberInviteEmail(email, link));
+    return { email, link, expiresAt, emailed };
   }
 
   private newInvite() {

@@ -1,6 +1,7 @@
 // Labels for routes, read by AuthGuard.
 //   @Public()          anyone may call it (a logged-in user is still recognised if present)
 //   @Roles('owner')    only these roles; everything else needs any logged-in user
+//   @Roles('barber')   only people the owner has as an active barber
 //   @CurrentUser()     puts the logged-in person into a controller method's argument
 import {
   createParamDecorator,

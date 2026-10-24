@@ -16,3 +16,5 @@ for (const path of ["api/src/supabase/database.types.ts", "lib/supabase/database
   writeFileSync(path, types);
   console.log(`Wrote ${path}`);
 }
+// The API checks its formatting with Prettier, so keep its copy formatted.
+execFileSync("npx", ["prettier", "--write", "src/supabase/database.types.ts"], { cwd: "api", stdio: "ignore" });

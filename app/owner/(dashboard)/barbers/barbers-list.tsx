@@ -23,7 +23,7 @@ type Barber = {
 };
 
 type Notice =
-  | { kind: "invite"; title: string; email: string; link: string; expiresAt: string }
+  | { kind: "invite"; title: string; email: string; link: string; expiresAt: string; emailed: boolean }
   | { kind: "deactivated"; name: string };
 
 const expiry = (iso: string) =>
@@ -50,7 +50,14 @@ export function BarbersList({ barbers, activeServiceCount, deactivatedName }: {
       if (result?.error || !result?.link) setResendError(result?.error);
       else {
         setResendError(undefined);
-        setNotice({ kind: "invite", title: "Invite resent", email: result.email!, link: result.link, expiresAt: result.expiresAt! });
+        setNotice({
+          kind: "invite",
+          title: "Invite resent",
+          email: result.email!,
+          link: result.link,
+          expiresAt: result.expiresAt!,
+          emailed: Boolean(result.emailed),
+        });
       }
     });
   };
@@ -145,7 +152,14 @@ export function BarbersList({ barbers, activeServiceCount, deactivatedName }: {
         onClose={() => setInviting(false)}
         onSent={(r) => {
           setInviting(false);
-          setNotice({ kind: "invite", title: `Invite created for ${r.email}`, email: r.email!, link: r.link!, expiresAt: r.expiresAt! });
+          setNotice({
+            kind: "invite",
+            title: r.emailed ? `Invite sent to ${r.email}` : `Invite created for ${r.email}`,
+            email: r.email!,
+            link: r.link!,
+            expiresAt: r.expiresAt!,
+            emailed: Boolean(r.emailed),
+          });
         }}
       />
     </>
@@ -198,11 +212,16 @@ function InviteNotice({ notice }: { notice: Extract<Notice, { kind: "invite" }> 
         The link expires on {expiry(notice.expiresAt)}. Any earlier link for {notice.email} no longer works.
       </p>
       <div className="mt-3 flex flex-col gap-2 rounded-md bg-surface p-3">
-        <p className="flex items-start gap-2 text-ink-muted">
-          <CircleAlert aria-hidden size={16} className="mt-0.5 shrink-0" />
-          Invite emails aren’t switched on yet, so nothing was sent. While we’re testing, copy this link and open it
-          yourself.
-        </p>
+        {notice.emailed ? (
+          <p className="text-ink-muted">
+            We’ve emailed the link to {notice.email}. You can also copy it and send it another way.
+          </p>
+        ) : (
+          <p className="flex items-start gap-2 text-ink-muted">
+            <CircleAlert aria-hidden size={16} className="mt-0.5 shrink-0" />
+            We couldn’t email the invite, so copy this link and send it to {notice.email} yourself.
+          </p>
+        )}
         <div className="flex items-center gap-3">
           <code className="min-w-0 flex-1 truncate rounded-sm bg-surface-muted px-2 py-1 text-caption">{notice.link}</code>
           <button

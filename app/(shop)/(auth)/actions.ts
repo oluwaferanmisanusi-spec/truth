@@ -38,7 +38,8 @@ export async function logIn(_prev: FormState | undefined, fd: FormData): Promise
     return { errors: { form: "The email or password is incorrect. Check them and try again." }, values: { email } };
   }
   const account = await getAccount();
-  const fallback = account?.role === "owner" ? "/owner/bookings" : "/bookings";
+  // Barbers land on their schedule; they can switch to My bookings from the person menu.
+  const fallback = account?.role === "owner" ? "/owner/bookings" : account?.barberId ? "/barber" : "/bookings";
   redirect(holdPath(fd) ?? safeNext(fd.get("next"), fallback));
 }
 

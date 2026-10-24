@@ -8,9 +8,13 @@ import {
   type ExecutionContext,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { Role } from '../contracts/me.js';
+import type { Me, Role } from '../contracts/me.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { IS_PUBLIC, ROLES, type AuthedRequest } from './decorators.js';
+
+/** Barbers are whoever has an active barber record; other roles come from the profile. */
+const hasRole = (user: Me, role: Role) =>
+  role === 'barber' ? user.barberId !== null : user.role === role;
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -39,7 +43,7 @@ export class AuthGuard implements CanActivate {
 
     if (isPublic) return true;
     if (!req.user) throw new UnauthorizedException('Log in to continue');
-    if (roles && !roles.includes(req.user.role))
+    if (roles && !roles.some((role) => hasRole(req.user!, role)))
       throw new ForbiddenException('Not allowed');
     return true;
   }
