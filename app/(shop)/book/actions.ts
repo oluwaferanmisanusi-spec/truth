@@ -19,6 +19,9 @@ export async function holdTime(formData: FormData) {
       const back = new URLSearchParams({ barber, date, taken: startsAt });
       redirect(`/book/${encodeURIComponent(serviceId)}/time?${back}`);
     }
+    if (error instanceof ApiError && error.status === 429) {
+      redirect(`/book/${encodeURIComponent(serviceId)}/time?${new URLSearchParams({ barber, date, limited: "1" })}`);
+    }
     // Bad input or the service stopped being bookable: start again from Home.
     if (error instanceof ApiError && (error.status === 400 || error.status === 404)) redirect("/");
     throw error;

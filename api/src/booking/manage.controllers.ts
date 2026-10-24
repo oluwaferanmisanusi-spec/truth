@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { z } from 'zod';
 import { CurrentUser, Public, Roles } from '../auth/decorators.js';
+import { perHour, RateLimit } from '../auth/rate-limit.js';
 import { Id, IsoDate, LinkToken } from '../config/validation.js';
 import type {
   ManagedBooking,
@@ -88,6 +89,7 @@ export class MyBookingsController extends ManageRoutes {
     return this.as(me, id).times(q);
   }
 
+  @RateLimit(perHour('reschedule-hold', 20))
   @Post(':id/reschedule/holds')
   hold(
     @CurrentUser() me: Me,
@@ -158,6 +160,7 @@ export class GuestBookingController extends ManageRoutes {
     return this.as(token).times(q);
   }
 
+  @RateLimit(perHour('reschedule-hold', 20))
   @Post('reschedule/holds')
   hold(
     @Param('token', { schema: LinkToken }) token: string,

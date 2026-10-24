@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { z } from 'zod';
 import { CurrentUser, Public, Roles } from '../auth/decorators.js';
+import { perHour, RateLimit } from '../auth/rate-limit.js';
 import { shopToday } from '../common/format.js';
 import {
   FullName,
@@ -52,6 +53,7 @@ export class BarberInvitesController {
 
   /** New person: creates their login and joins (4.1). */
   @Public()
+  @RateLimit(perHour('barber-invite-accept', 10))
   @Post('accept')
   @HttpCode(200)
   accept(

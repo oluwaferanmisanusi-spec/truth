@@ -43,6 +43,7 @@ export async function holdNewTime(key: string, formData: FormData) {
       redirect(`${base}/reschedule?${new URLSearchParams({ date, taken: startsAt })}`);
     }
     if (error instanceof ApiError && error.status === 400) redirect(`${base}/reschedule`);
+    if (error instanceof ApiError && error.status === 429) redirect(`${base}/reschedule?${new URLSearchParams({ date, limited: "1" })}`);
     throw error;
   }
   redirect(`${base}/reschedule/${holdId}`);

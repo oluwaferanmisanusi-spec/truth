@@ -25,6 +25,7 @@ export async function setNewPassword(token: string, _prev: NewPasswordState, for
     if (error instanceof ApiError && error.status === 400 && error.fieldErrors.password) {
       return { errors: { password: `${error.fieldErrors.password}.` } };
     }
+    if (error instanceof ApiError && error.status === 429) return { errors: { form: error.message } };
     if (error instanceof ApiError) {
       return { errors: { form: "This link has expired. Ask for a new one to set your password." } };
     }

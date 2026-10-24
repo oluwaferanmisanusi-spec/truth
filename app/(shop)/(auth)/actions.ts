@@ -64,6 +64,7 @@ export async function signUp(_prev: FormState | undefined, fd: FormData): Promis
     if (!(error instanceof ApiError)) throw error;
     if (error.status === 400) return { errors: error.fieldErrors, values };
     if (error.code === "email_exists") return { errors: { email: error.message }, values };
+    if (error.status === 429) return { errors: { form: error.message }, values };
     console.error("Sign up failed", error);
     return { errors: { form: "Something went wrong and your account wasn’t created. Please try again." }, values };
   }
@@ -86,6 +87,7 @@ export async function requestPasswordReset(_prev: FormState | undefined, fd: For
     return await api<{ sentTo: string }>("/password-resets", { method: "POST", body: { email } });
   } catch (error) {
     if (error instanceof ApiError && error.status === 400) return { errors: error.fieldErrors, values: { email } };
+    if (error instanceof ApiError && error.status === 429) return { errors: { email: error.message }, values: { email } };
     throw error;
   }
 }
@@ -107,6 +109,7 @@ export async function setNewPassword(token: string, _prev: FormState | undefined
     if (error instanceof ApiError && error.status === 400 && error.fieldErrors.password) {
       return { errors: { password: error.fieldErrors.password } };
     }
+    if (error instanceof ApiError && error.status === 429) return { errors: { password: error.message } };
     // Used up, expired or not a real link: the page shows "This link has expired".
     if (error instanceof ApiError) redirect(`/reset-password/${encodeURIComponent(token)}`);
     throw error;
@@ -124,6 +127,7 @@ export async function resendVerification(): Promise<FormState> {
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) redirect("/login?next=/verify-email");
     if (error instanceof ApiError && error.code === "already_verified") redirect("/bookings");
+    if (error instanceof ApiError && error.status === 429) return { tooSoon: true, sentTo: "your email" };
     throw error;
   }
 }
@@ -135,6 +139,7 @@ export async function resendFromExpiredLink(token: string): Promise<FormState> {
   } catch (error) {
     if (error instanceof ApiError && error.code === "already_verified") redirect("/bookings");
     if (error instanceof ApiError && (error.status === 404 || error.status === 400)) redirect("/login");
+    if (error instanceof ApiError && error.status === 429) return { tooSoon: true, sentTo: "your email" };
     throw error;
   }
 }

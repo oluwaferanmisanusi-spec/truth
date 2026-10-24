@@ -7,6 +7,7 @@ import { BookingModule } from './booking/booking.module.js';
 import { CommonModule } from './common/common.module.js';
 import { validateEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
+import { JobsModule } from './jobs/jobs.module.js';
 import { OwnerModule } from './owner/owner.module.js';
 import { ShopModule } from './shop/shop.module.js';
 import { SupabaseModule } from './supabase/supabase.module.js';
@@ -27,6 +28,7 @@ import { SupabaseModule } from './supabase/supabase.module.js';
     BookingModule,
     OwnerModule,
     BarberModule,
+    JobsModule,
   ],
   controllers: [HealthController],
 })

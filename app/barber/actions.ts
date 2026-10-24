@@ -37,6 +37,7 @@ export async function acceptInvite(token: string, _prev: InviteState | undefined
   } catch (error) {
     if (!(error instanceof ApiError) || error.status >= 500) throw error;
     if (error.status === 400) return { errors: error.fieldErrors, values: { name } };
+    if (error.status === 429) return { errors: { form: error.message }, values: { name } };
     // Expired, used, or the email has a customer account: the page shows what to do next.
     redirect(invitePage(token));
   }

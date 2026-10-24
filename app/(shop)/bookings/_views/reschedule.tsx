@@ -54,6 +54,11 @@ async function Choose({ m, query }: { m: Managed; query: Query }) {
             <p className="text-small text-ink-muted">{b.serviceName} with {b.barberName}</p>
             <p className="text-small text-ink-muted">Currently {at(b.startsAt)}</p>
           </div>
+          {one(query.limited) && (
+            <Alert variant="warning" role="alert" title="Too many attempts">
+              You’ve held a lot of times in the last hour. Please wait a while, then choose a time again.
+            </Alert>
+          )}
           {valid(taken) && (
             <Alert variant="danger" role="alert" title={`${formatTime(taken!)} was just booked`}>
               Someone else booked it a moment ago. Choose another time.

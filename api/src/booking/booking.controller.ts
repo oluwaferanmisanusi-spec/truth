@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { z } from 'zod';
 import { CurrentUser, Public } from '../auth/decorators.js';
+import { perHour, RateLimit } from '../auth/rate-limit.js';
 import type { Hold, ServiceWithBarbers, Times } from '../contracts/booking.js';
 import type { Me } from '../contracts/me.js';
 import {
@@ -72,6 +73,8 @@ export class BookingController {
     return this.availability.times(id, barberId, query);
   }
 
+  // Holds block a time for everyone else, so one visitor can't hold the whole day.
+  @RateLimit(perHour('hold', 15))
   @Post('holds')
   createHold(@Body({ schema: NewHold }) body: z.output<typeof NewHold>) {
     return this.holds.create({
@@ -86,6 +89,7 @@ export class BookingController {
     return this.holds.get(id);
   }
 
+  @RateLimit(perHour('pay', 20))
   @Post('holds/:id/pay')
   @HttpCode(200)
   pay(

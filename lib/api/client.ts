@@ -2,10 +2,20 @@
 // token goes along as a Bearer token, and the API checks it itself, so the API decides who
 // may do what.
 import "server-only";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3200";
+const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
+
+/** The visitor's IP, so the API's attempt limits count each visitor, not our server. */
+async function visitorHeaders(): Promise<Record<string, string>> {
+  if (!INTERNAL_API_KEY) return {};
+  const h = await headers();
+  const ip = h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return ip ? { "X-Internal-Key": INTERNAL_API_KEY, "X-Visitor-IP": ip } : {};
+}
 
 /**
  * A failed API call: the HTTP status, its message, a code for the cases a page handles
@@ -34,6 +44,7 @@ export async function api<T>(path: string, { method = "GET", body }: Options = {
   const res = await fetch(API_URL + path, {
     method,
     headers: {
+      ...(await visitorHeaders()),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
     },

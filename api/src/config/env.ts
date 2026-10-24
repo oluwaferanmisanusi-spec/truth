@@ -12,6 +12,10 @@ const schema = z.object({
   PAYSTACK_SECRET_KEY: z.string().startsWith('sk_'),
   RESEND_API_KEY: z.string().startsWith('re_'),
   EMAIL_FROM: z.string().min(1),
+  /** Vercel Cron sends this as a Bearer token to /jobs/…; without it the jobs refuse to run. */
+  CRON_SECRET: z.string().min(32).optional(),
+  /** Shared with the website (server side only), so it can pass on the visitor's IP. */
+  INTERNAL_API_KEY: z.string().min(32).optional(),
 });
 
 export type Env = z.infer<typeof schema>;

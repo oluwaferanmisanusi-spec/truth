@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { z } from 'zod';
 import { CurrentUser, Public, Roles } from '../auth/decorators.js';
+import { perHour, RateLimit } from '../auth/rate-limit.js';
 import { shopToday } from '../common/format.js';
 import {
   Email,
@@ -309,6 +310,7 @@ export class ManagerInvitesController {
     return this.managers.read(token);
   }
 
+  @RateLimit(perHour('manager-invite-accept', 10))
   @Post('accept')
   @HttpCode(200)
   accept(

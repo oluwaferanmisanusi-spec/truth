@@ -49,6 +49,11 @@ async function ChooseTime({ params, searchParams }: Props) {
       <main className="flex flex-1 flex-col">
         <div className="flex flex-col gap-6 px-4 py-6">
           <Stepper step={3} context={`${service.name} with ${barber ? barber.fullName : "any available barber"}`} />
+          {one(query.limited) && (
+            <Alert variant="warning" role="alert" title="Too many attempts">
+              You’ve held a lot of times in the last hour. Please wait a while, then choose a time again.
+            </Alert>
+          )}
           {taken && !Number.isNaN(Date.parse(taken)) && (
             <Alert variant="danger" role="alert" title={`${formatTime(taken)} was just booked`}>
               Someone else booked it a moment ago. Choose another time.

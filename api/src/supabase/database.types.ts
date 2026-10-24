@@ -560,6 +560,25 @@ export type Database = {
         };
         Relationships: [];
       };
+      rate_limits: {
+        Row: {
+          hits: number;
+          key: string;
+          window_start: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          hits?: number;
+          key: string;
+          window_start: string;
+        };
+        Update: {
+          hits?: number;
+          key?: string;
+          window_start?: string;
+        };
+        Relationships: [];
+      };
       refunds: {
         Row: {
           amount_kobo: number;
@@ -1025,6 +1044,10 @@ export type Database = {
       generate_booking_reference: {
         Args: Record<PropertyKey, never>;
         Returns: string;
+      };
+      hit_rate_limit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number };
+        Returns: boolean;
       };
       is_owner: { Args: Record<PropertyKey, never>; Returns: boolean };
       lock_barber_time: { Args: { p_barber_id: string }; Returns: undefined };

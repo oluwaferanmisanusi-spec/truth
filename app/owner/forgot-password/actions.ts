@@ -17,6 +17,7 @@ export async function requestPasswordReset(_prev: ResetRequestState, formData: F
     if (error instanceof ApiError && error.status === 400) {
       return { error: "Enter an email address like name@example.com.", email };
     }
+    if (error instanceof ApiError && error.status === 429) return { error: error.message, email };
     throw error;
   }
 }

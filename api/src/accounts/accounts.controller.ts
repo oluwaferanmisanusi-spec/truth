@@ -1,6 +1,7 @@
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import { z } from 'zod';
 import { CurrentUser, Public } from '../auth/decorators.js';
+import { perHour, RateLimit } from '../auth/rate-limit.js';
 import {
   Email,
   FullName,
@@ -26,12 +27,14 @@ export class AccountsController {
   constructor(private readonly accounts: AccountsService) {}
 
   @Public()
+  @RateLimit(perHour('sign-up', 5))
   @Post('accounts')
   signUp(@Body({ schema: SignUp }) body: z.output<typeof SignUp>) {
     return this.accounts.signUp(body);
   }
 
   /** Logged in only: resend my own verification link. */
+  @RateLimit(perHour('verify-resend', 5, 'user'))
   @Post('me/verification-email')
   @HttpCode(200)
   resend(@CurrentUser() me: Me): Promise<LinkSent> {
@@ -49,6 +52,7 @@ export class AccountsController {
   }
 
   @Public()
+  @RateLimit(perHour('verify-resend-expired', 5))
   @Post('email-verifications/:token/resend')
   @HttpCode(200)
   resendExpired(
@@ -58,6 +62,7 @@ export class AccountsController {
   }
 
   @Public()
+  @RateLimit(perHour('reset-request', 10), perHour('reset-request', 3, 'email'))
   @Post('password-resets')
   @HttpCode(200)
   requestReset(
@@ -73,6 +78,7 @@ export class AccountsController {
   }
 
   @Public()
+  @RateLimit(perHour('reset-complete', 10))
   @Post('password-resets/:token/complete')
   @HttpCode(200)
   reset(
