@@ -1,5 +1,6 @@
-// The owner's desktop screens (Figma 5.1–5.12). @Roles('owner') on each class locks every
-// route in it: the guard turns away anyone who isn't logged in as the owner.
+// The owner's desktop screens (Figma 5.1–5.12). @Roles('owner', 'manager') on each class
+// locks every route in it to the owner and managers; a route marked @Roles('owner') is the
+// owner's alone (inviting managers).
 import {
   Body,
   Controller,
@@ -12,13 +13,22 @@ import {
   Query,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { Roles } from '../auth/decorators.js';
+import { CurrentUser, Public, Roles } from '../auth/decorators.js';
 import { shopToday } from '../common/format.js';
-import { Id, IsoDate } from '../config/validation.js';
+import {
+  Email,
+  FullName,
+  Id,
+  IsoDate,
+  LinkToken,
+  NewPassword,
+} from '../config/validation.js';
+import type { Me } from '../contracts/me.js';
 import type {
   BookingFilterOptions,
   HolidayAdded,
   Invite,
+  ManagerInvite,
   OutcomesDue,
   OwnerBarberDetail,
   OwnerBarbers,
@@ -27,9 +37,11 @@ import type {
   OwnerServiceDetail,
   ShopSettings,
   Stats,
+  Team,
 } from '../contracts/owner.js';
 import { OwnerBarbersService } from './owner-barbers.service.js';
 import { OwnerBookingsService } from './owner-bookings.service.js';
+import { OwnerManagersService } from './owner-managers.service.js';
 import { OwnerServicesService, ServiceBody } from './owner-services.service.js';
 import { OwnerSettingsService, TIME_ZONES } from './owner-settings.service.js';
 import { WeekHours } from './week.js';
@@ -60,7 +72,7 @@ const BookingQuery = z.object({
 
 const Active = z.object({ active: z.boolean() });
 
-@Roles('owner')
+@Roles('owner', 'manager')
 @Controller('owner')
 export class OwnerBookingsController {
   constructor(private readonly bookings: OwnerBookingsService) {}
@@ -96,7 +108,7 @@ export class OwnerBookingsController {
   }
 }
 
-@Roles('owner')
+@Roles('owner', 'manager')
 @Controller('owner/services')
 export class OwnerServicesController {
   constructor(private readonly services: OwnerServicesService) {}
@@ -147,7 +159,7 @@ const InviteBody = z.object({
 });
 const BarberBody = z.object({ serviceIds: z.array(Id), hours: WeekHours });
 
-@Roles('owner')
+@Roles('owner', 'manager')
 @Controller('owner')
 export class OwnerBarbersController {
   constructor(private readonly barbers: OwnerBarbersService) {}
@@ -215,7 +227,7 @@ const HolidayBody = z.object({
     .transform((s) => s || null),
 });
 
-@Roles('owner')
+@Roles('owner', 'manager')
 @Controller('owner')
 export class OwnerSettingsController {
   constructor(private readonly settings: OwnerSettingsService) {}
@@ -240,5 +252,69 @@ export class OwnerSettingsController {
   @Delete('holidays/:id')
   removeHoliday(@Param('id', { schema: Id }) id: string) {
     return this.settings.removeHoliday(id);
+  }
+}
+
+const ManagerInviteBody = z.object({ email: Email });
+const NewManager = z.object({ name: FullName, password: NewPassword });
+
+@Roles('owner', 'manager')
+@Controller('owner')
+export class OwnerManagersController {
+  constructor(private readonly managers: OwnerManagersService) {}
+
+  @Get('managers')
+  team(@CurrentUser() me: Me): Promise<Team> {
+    return this.managers.team(me);
+  }
+
+  @Roles('owner')
+  @Post('manager-invites')
+  invite(
+    @Body({ schema: ManagerInviteBody })
+    body: z.output<typeof ManagerInviteBody>,
+  ): Promise<Invite> {
+    return this.managers.invite(body.email);
+  }
+
+  @Roles('owner')
+  @Post('manager-invites/:id/resend')
+  @HttpCode(200)
+  resend(@Param('id', { schema: Id }) id: string): Promise<Invite> {
+    return this.managers.resend(id);
+  }
+
+  @Roles('owner')
+  @Delete('manager-invites/:id')
+  cancel(@Param('id', { schema: Id }) id: string) {
+    return this.managers.cancel(id);
+  }
+
+  @Delete('managers/:id')
+  remove(@CurrentUser() me: Me, @Param('id', { schema: Id }) id: string) {
+    return this.managers.remove(me, id);
+  }
+}
+
+/** The link in a manager's invite email. Anyone holding the link may open it. */
+@Public()
+@Controller('manager-invites/:token')
+export class ManagerInvitesController {
+  constructor(private readonly managers: OwnerManagersService) {}
+
+  @Get()
+  get(
+    @Param('token', { schema: LinkToken }) token: string,
+  ): Promise<ManagerInvite> {
+    return this.managers.read(token);
+  }
+
+  @Post('accept')
+  @HttpCode(200)
+  accept(
+    @Param('token', { schema: LinkToken }) token: string,
+    @Body({ schema: NewManager }) body: z.output<typeof NewManager>,
+  ) {
+    return this.managers.accept(token, body.name, body.password);
   }
 }

@@ -25,7 +25,7 @@ From the repo root, `npm run dev:api` does the same.
 | `shop/` | `GET /shop`, `GET /services` (public) |
 | `booking/` | Booking flow (holds, Paystack, webhook) and managing a booking (account + guest link) |
 | `accounts/` | Sign up, email verification, password reset (own one-time links, emailed via Resend) |
-| `owner/` | Owner screens under `/owner/…`, all `@Roles('owner')` |
+| `owner/` | Owner dashboard under `/owner/…` for the owner and managers (`@Roles('owner', 'manager')`); inviting managers is `@Roles('owner')`. Public manager invite links under `/manager-invites/…` |
 | `barber/` | Invite links (`/barber-invites/…`) and the barber's own schedule, outcomes and blocks under `/barber/…`, all `@Roles('barber')` |
 | `common/`, `email/`, `paystack/` | Shared: shop rules, site links, tokens, email layout, Paystack client |
 | `health/` | `GET /health` |

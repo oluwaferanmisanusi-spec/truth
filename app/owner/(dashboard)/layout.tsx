@@ -3,7 +3,8 @@ import { requireOwner } from "@/lib/auth/owner";
 import { OwnerSidebar } from "@/components/owner/sidebar";
 
 // Every page in this group is owner-only. The proxy redirects logged-out visitors early;
-// OwnerShell is the authoritative check (it also turns away logged-in customers and barbers).
+// OwnerShell is the page-side check (it also turns away logged-in customers and barbers);
+// managers get in too.
 // The session read sits behind Suspense, as Cache Components requires.
 export default function OwnerDashboardLayout({ children }: LayoutProps<"/owner">) {
   return (
@@ -17,7 +18,11 @@ async function OwnerShell({ children }: { children: React.ReactNode }) {
   const owner = await requireOwner();
   return (
     <div className="flex min-h-screen">
-      <OwnerSidebar name={owner.fullName || "Shop owner"} email={owner.email} />
+      <OwnerSidebar
+        name={owner.fullName || (owner.role === "owner" ? "Shop owner" : "Manager")}
+        email={owner.email}
+        role={owner.role === "owner" ? "owner" : "manager"}
+      />
       <main className="flex min-w-0 flex-1 flex-col gap-8 p-10">{children}</main>
     </div>
   );

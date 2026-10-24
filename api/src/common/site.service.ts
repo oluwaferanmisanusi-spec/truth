@@ -18,6 +18,10 @@ export class SiteService {
     return this.url(`/barber/invite/${token}`);
   }
 
+  managerInviteUrl(token: string) {
+    return this.url(`/owner/invite/${token}`);
+  }
+
   guestBookingUrl(token: string) {
     return this.url(`/bookings/guest/${token}`);
   }

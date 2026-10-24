@@ -424,6 +424,37 @@ export type Database = {
         };
         Relationships: [];
       };
+      manager_invites: {
+        Row: {
+          accepted_at: string | null;
+          created_at: string;
+          email: string;
+          expires_at: string;
+          id: string;
+          revoked_at: string | null;
+          token_hash: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          accepted_at?: string | null;
+          created_at?: string;
+          email: string;
+          expires_at: string;
+          id?: string;
+          revoked_at?: string | null;
+          token_hash: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          created_at?: string;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          revoked_at?: string | null;
+          token_hash?: string;
+        };
+        Relationships: [];
+      };
       opening_hours: {
         Row: {
           closes_at: string | null;
@@ -783,6 +814,14 @@ export type Database = {
         };
         Returns: string;
       };
+      accept_manager_invite: {
+        Args: {
+          p_full_name: string;
+          p_profile_id: string;
+          p_token_hash: string;
+        };
+        Returns: undefined;
+      };
       available_slots: {
         Args: {
           p_barber_id: string;
@@ -1113,7 +1152,7 @@ export type Database = {
       cancelled_by: 'customer' | 'owner';
       payment_status: 'pending' | 'success' | 'failed' | 'abandoned';
       refund_status: 'pending' | 'processed' | 'failed';
-      user_role: 'customer' | 'barber' | 'owner';
+      user_role: 'customer' | 'barber' | 'owner' | 'manager';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -1254,7 +1293,7 @@ export const Constants = {
       cancelled_by: ['customer', 'owner'],
       payment_status: ['pending', 'success', 'failed', 'abandoned'],
       refund_status: ['pending', 'processed', 'failed'],
-      user_role: ['customer', 'barber', 'owner'],
+      user_role: ['customer', 'barber', 'owner', 'manager'],
     },
   },
 } as const;

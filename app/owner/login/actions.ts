@@ -22,7 +22,8 @@ export async function logIn(_prev: LoginState, formData: FormData): Promise<Logi
   if (error || !data.user) return { error: WRONG_DETAILS, email };
 
   // A customer or barber with valid details still can't use the owner screens.
-  if ((await getAccount())?.role !== "owner") {
+  const role = (await getAccount())?.role;
+  if (role !== "owner" && role !== "manager") {
     await supabase.auth.signOut();
     return { error: WRONG_DETAILS, email };
   }

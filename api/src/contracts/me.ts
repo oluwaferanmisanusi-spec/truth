@@ -1,6 +1,7 @@
 // Shapes the API sends back, shared with the website (type-only imports, no decorators here).
 
-export type Role = 'customer' | 'barber' | 'owner';
+/** A manager uses the owner dashboard like the owner, except inviting managers. */
+export type Role = 'customer' | 'barber' | 'owner' | 'manager';
 
 /** The logged-in person, as GET /me returns them. */
 export type Me = {

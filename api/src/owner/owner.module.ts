@@ -2,9 +2,12 @@ import { Module } from '@nestjs/common';
 import { BookingModule } from '../booking/booking.module.js';
 import { OwnerBarbersService } from './owner-barbers.service.js';
 import { OwnerBookingsService } from './owner-bookings.service.js';
+import { OwnerManagersService } from './owner-managers.service.js';
 import {
+  ManagerInvitesController,
   OwnerBarbersController,
   OwnerBookingsController,
+  OwnerManagersController,
   OwnerServicesController,
   OwnerSettingsController,
 } from './owner.controllers.js';
@@ -19,12 +22,15 @@ import { OwnerSettingsService } from './owner-settings.service.js';
     OwnerServicesController,
     OwnerBarbersController,
     OwnerSettingsController,
+    OwnerManagersController,
+    ManagerInvitesController,
   ],
   providers: [
     OwnerBookingsService,
     OwnerServicesService,
     OwnerBarbersService,
     OwnerSettingsService,
+    OwnerManagersService,
   ],
 })
 export class OwnerModule {}

@@ -120,6 +120,21 @@ export type Invite = {
   emailed: boolean;
 };
 
+/** GET /owner/managers: who can use the owner dashboard. */
+export type Team = {
+  owner: { name: string; email: string };
+  managers: { id: string; name: string; email: string; isMe: boolean }[];
+  /** Invites not yet accepted; only the owner sees these. */
+  invites: { id: string; email: string; expiresAt: string; expired: boolean }[];
+};
+
+/** GET /manager-invites/:token */
+export type ManagerInvite =
+  | { state: 'valid'; email: string; expiresAt: string; hasAccount: boolean }
+  | { state: 'expired' }
+  | { state: 'accepted' }
+  | { state: 'missing' };
+
 /** GET /owner/settings (Figma 5.12) */
 export type ShopSettings = {
   timeZone: string;

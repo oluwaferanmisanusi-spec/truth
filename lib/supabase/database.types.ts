@@ -231,6 +231,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"manager_invites": {
+                  Row: {
+                    "accepted_at": string | null,"created_at": string,"email": string,"expires_at": string,"id": string,"revoked_at": string | null,"token_hash": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accepted_at"?: string | null,"created_at"?: string,"email": string,"expires_at": string,"id"?: string,"revoked_at"?: string | null,"token_hash": string
+                  }
+                  Update: {
+                    "accepted_at"?: string | null,"created_at"?: string,"email"?: string,"expires_at"?: string,"id"?: string,"revoked_at"?: string | null,"token_hash"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"opening_hours": {
                   Row: {
                     "closes_at": string | null,"is_open": boolean,"opens_at": string | null,"weekday": number
@@ -407,6 +421,9 @@ isOneToOne: false
           Functions: {
             "accept_barber_invite":
 { Args: { "p_full_name": string,"p_profile_id": string,"p_token_hash": string }; Returns: string
+                           },
+"accept_manager_invite":
+{ Args: { "p_full_name": string,"p_profile_id": string,"p_token_hash": string }; Returns: undefined
                            },
 "available_slots":
 { Args: { "p_barber_id": string,"p_from": string,"p_service_id": string,"p_to": string }; Returns: {
@@ -655,7 +672,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "auth_token_purpose": "verify_email"|"reset_password","barber_status": "invited"|"active"|"inactive","booking_status": "pending_payment"|"expired"|"confirmed"|"completed"|"no_show"|"cancelled","cancelled_by": "customer"|"owner","payment_status": "pending"|"success"|"failed"|"abandoned","refund_status": "pending"|"processed"|"failed","user_role": "customer"|"barber"|"owner"
+            "auth_token_purpose": "verify_email"|"reset_password","barber_status": "invited"|"active"|"inactive","booking_status": "pending_payment"|"expired"|"confirmed"|"completed"|"no_show"|"cancelled","cancelled_by": "customer"|"owner","payment_status": "pending"|"success"|"failed"|"abandoned","refund_status": "pending"|"processed"|"failed","user_role": "customer"|"barber"|"owner"|"manager"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -771,7 +788,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "auth_token_purpose": ["verify_email", "reset_password"],"barber_status": ["invited", "active", "inactive"],"booking_status": ["pending_payment", "expired", "confirmed", "completed", "no_show", "cancelled"],"cancelled_by": ["customer", "owner"],"payment_status": ["pending", "success", "failed", "abandoned"],"refund_status": ["pending", "processed", "failed"],"user_role": ["customer", "barber", "owner"]
+            "auth_token_purpose": ["verify_email", "reset_password"],"barber_status": ["invited", "active", "inactive"],"booking_status": ["pending_payment", "expired", "confirmed", "completed", "no_show", "cancelled"],"cancelled_by": ["customer", "owner"],"payment_status": ["pending", "success", "failed", "abandoned"],"refund_status": ["pending", "processed", "failed"],"user_role": ["customer", "barber", "owner", "manager"]
           }
         }
 } as const

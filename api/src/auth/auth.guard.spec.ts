@@ -20,11 +20,13 @@ const owner: Me = {
 const customer: Me = { ...owner, id: 'u2', role: 'customer' };
 const barber: Me = { ...owner, id: 'u3', role: 'barber', barberId: 'b1' };
 const inactive: Me = { ...barber, id: 'u4', barberId: null };
+const manager: Me = { ...owner, id: 'u5', role: 'manager' };
 const tokens: Record<string, Me> = {
   'owner-token': owner,
   'customer-token': customer,
   'barber-token': barber,
   'inactive-token': inactive,
+  'manager-token': manager,
 };
 
 const supabase = {
@@ -95,6 +97,18 @@ describe('AuthGuard', () => {
     ).rejects.toThrow(ForbiddenException);
     await expect(
       run({ roles: ['customer', 'owner'] }, 'Bearer barber-token').result,
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('lets managers into owner screens, but not owner-only routes', async () => {
+    expect(
+      await run({ roles: ['owner', 'manager'] }, 'Bearer manager-token').result,
+    ).toBe(true);
+    await expect(
+      run({ roles: ['owner'] }, 'Bearer manager-token').result,
+    ).rejects.toThrow(ForbiddenException);
+    await expect(
+      run({ roles: ['owner', 'manager'] }, 'Bearer customer-token').result,
     ).rejects.toThrow(ForbiddenException);
   });
 });

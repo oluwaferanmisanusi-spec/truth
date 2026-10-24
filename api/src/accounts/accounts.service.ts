@@ -101,8 +101,8 @@ export class AccountsService {
 
   /**
    * Forgot password (3.3 → 3.4, owner 5.0b → 5.0c). Same answer whether or not the email
-   * has an account. From the owner's screen, only the owner's account gets a link, and it
-   * opens the owner's own Set new password page.
+   * has an account. From the owner's screen, only the owner's and managers' accounts get a
+   * link, and it opens the owner's own Set new password page.
    */
   async requestPasswordReset(email: string, area: 'shop' | 'owner') {
     const { data: profile } = await this.supabase.admin
@@ -111,7 +111,9 @@ export class AccountsService {
       .ilike('email', email)
       .maybeSingle();
     const matches = profile && profile.email.toLowerCase() === email;
-    if (matches && (area === 'shop' || profile.role === 'owner')) {
+    const canUseDashboard =
+      profile?.role === 'owner' || profile?.role === 'manager';
+    if (matches && (area === 'shop' || canUseDashboard)) {
       const page = area === 'owner' ? '/owner/reset-password' : undefined;
       const url = await this.tokens.createLink(
         profile.id,

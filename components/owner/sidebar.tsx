@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Calendar, ChartColumn, Scissors, Settings, Users, type LucideIcon } from "lucide-react";
+import { Calendar, ChartColumn, Scissors, Settings, ShieldCheck, Users, type LucideIcon } from "lucide-react";
 import { Dialog } from "@/components/dialog";
 import { buttonClass } from "@/components/ui";
 import { logOut } from "@/app/owner/login/actions";
@@ -15,9 +15,12 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/owner/services", label: "Services", icon: Scissors },
   { href: "/owner/barbers", label: "Barbers", icon: Users },
   { href: "/owner/settings", label: "Shop settings", icon: Settings },
+  { href: "/owner/managers", label: "Managers", icon: ShieldCheck },
 ];
 
-export function OwnerSidebar({ name, email }: { name: string; email: string }) {
+const roleLabel = (role: "owner" | "manager") => (role === "owner" ? "Shop owner" : "Manager");
+
+export function OwnerSidebar({ name, email, role }: { name: string; email: string; role: "owner" | "manager" }) {
   const pathname = usePathname();
   const [confirmingLogOut, setConfirmingLogOut] = useState(false);
 
@@ -49,6 +52,7 @@ export function OwnerSidebar({ name, email }: { name: string; email: string }) {
 
       <div className="flex flex-col gap-1 pl-3">
         <p className="text-small font-medium">{name}</p>
+        {name !== roleLabel(role) && <p className="text-caption font-medium text-ink-muted">{roleLabel(role)}</p>}
         <p className="truncate text-caption font-medium text-ink-muted" title={email}>
           {email}
         </p>
