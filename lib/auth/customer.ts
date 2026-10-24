@@ -22,7 +22,29 @@ export async function requireAccount(next: string) {
   return account;
 }
 
-/** Only same-site paths, so a link can't bounce someone to another website. */
+/**
+ * Only same-site paths, so a link can't bounce someone to another website. Parsed the way a
+ * browser would, which also catches tricks like "/\\evil.com" (browsers read it as "//evil.com").
+ */
 export function safeNext(next: unknown, fallback = "/bookings") {
-  return typeof next === "string" && next.startsWith("/") && !next.startsWith("//") ? next : fallback;
+  if (typeof next !== "string" || !next.startsWith("/")) return fallback;
+  try {
+    const url = new URL(next, "https://same.invalid");
+    return url.origin === "https://same.invalid" ? url.pathname + url.search + url.hash : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Asks the API before a log in whether this visitor and email may try again. Returns the
+ * "Too many attempts" message, or null to go ahead (also if the API can't be asked).
+ */
+export async function loginBlocked(email: string) {
+  try {
+    await api("/login-attempts", { method: "POST", body: { email } });
+    return null;
+  } catch (error) {
+    return error instanceof ApiError && error.status === 429 ? error.message : null;
+  }
 }

@@ -32,6 +32,13 @@ Suggestion for later (not built): one login per person, so a barber who is also 
 5. Barber: invite, day/week schedule, outcomes, block time (done 2026-10-24, NestJS `barber/` + website `/barber`)
 6. Hardening: cron for expiries and the end-of-day outcome reminder email, concurrency tests, security review, QA, Vercel deploy (verify a Resend domain so invite emails reach any address)
 
+## Security and jobs (Phase 6, 2026-10-25)
+- Scheduled jobs: `api/vercel.json` crons call `/jobs/tidy` (hourly: expire holds, check payments Paystack never reported, retry refunds that failed to send, clear old tokens and counts) and `/jobs/outcome-reminders` (18:00 UTC = 19:00 WAT, barbers only). They need `CRON_SECRET`.
+- Attempt limits: `@RateLimit(...)` on a route, counted in the database (`rate_limits`), per visitor IP (IPv6 by /64), email or user. The website forwards the visitor IP with `INTERNAL_API_KEY`; both keys are required when `NODE_ENV=production`. The website asks `POST /login-attempts` before each log in.
+- Sessions: the API refuses a token whose Supabase session is gone (log out, password reset, removed manager); a password reset logs the account out everywhere.
+- The public booking page (`GET /holds/:id`) shows the customer's email only while it's a hold; after that it's masked.
+- Website security headers are in `next.config.ts`. Supabase public sign-up must stay off (dashboard: Authentication → Sign In / Providers); all accounts are made by the API.
+
 ## Keeping this repo safe
 This file, `AGENTS.md` and everything else in git are readable by anyone with repo access. Never put secrets (keys, passwords, database URLs), real customer or barber data, or the owner's real login in them; use the dummy data above. Real values live only in `api/.env` and `.env.local`, which git ignores; share them with a developer through a password manager, never chat, email or an issue.
 

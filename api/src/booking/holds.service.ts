@@ -14,6 +14,13 @@ import { PaystackService } from '../paystack/paystack.service.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { PaymentsService } from './payments.service.js';
 
+/** 'tolu.ade@gmail.com' → 'to•••@gmail.com' */
+export function maskEmail(email: string) {
+  const at = email.indexOf('@');
+  if (at < 1) return email ? '•••' : '';
+  return `${email.slice(0, Math.min(2, at))}•••${email.slice(at)}`;
+}
+
 const SELECT =
   'id, reference, status, service_id, service_name, duration_minutes, price_kobo, starts_at, hold_expires_at, any_barber, refund_due, customer_name, customer_email, barber_id, barbers!bookings_barber_id_fkey(full_name), payments(status, authorization_url)';
 
@@ -86,7 +93,12 @@ export class HoldsService {
       barberId: data.barber_id,
       barberName: data.barbers?.full_name ?? '',
       customerName: data.customer_name,
-      customerEmail: data.customer_email,
+      // The booking page is open to anyone with the link (its id is in Paystack's return URL
+      // and barbers see ids), so once paid or ended, the email is only hinted at.
+      customerEmail:
+        data.status === 'pending_payment'
+          ? data.customer_email
+          : maskEmail(data.customer_email),
       holdSecondsLeft,
       paymentStatus: payment?.status ?? null,
     };

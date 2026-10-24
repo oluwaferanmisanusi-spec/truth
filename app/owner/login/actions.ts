@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getAccount } from "@/lib/auth/customer";
+import { getAccount, loginBlocked } from "@/lib/auth/customer";
 
 export type LoginState = { error?: string; email?: string } | undefined;
 
@@ -16,6 +16,9 @@ export async function logIn(_prev: LoginState, formData: FormData): Promise<Logi
   if (!email || !password) {
     return { error: "Enter your email address and password.", email };
   }
+
+  const blocked = await loginBlocked(email);
+  if (blocked) return { error: blocked, email };
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });

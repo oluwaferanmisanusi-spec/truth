@@ -74,7 +74,13 @@ export class BookingController {
   }
 
   // Holds block a time for everyone else, so one visitor can't hold the whole day.
-  @RateLimit(perHour('hold', 15))
+  // Holds last 10 minutes, so 3 per 10 minutes also caps how many one visitor has at once.
+  @RateLimit(perHour('hold', 15), {
+    name: 'hold-burst',
+    limit: 3,
+    windowSeconds: 600,
+    by: 'ip',
+  })
   @Post('holds')
   createHold(@Body({ schema: NewHold }) body: z.output<typeof NewHold>) {
     return this.holds.create({
@@ -107,6 +113,8 @@ export class BookingController {
     return this.holds.pay(id, details, user);
   }
 
+  // The confirming page asks every few seconds; each check calls Paystack.
+  @RateLimit({ name: 'check-payment', limit: 60, windowSeconds: 600, by: 'ip' })
   @Post('holds/:id/check-payment')
   @HttpCode(200)
   checkPayment(@Param('id', { schema: Id }) id: string) {

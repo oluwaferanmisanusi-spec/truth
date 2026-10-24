@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import type { LinkSent } from "@api/me";
 import { createClient } from "@/lib/supabase/server";
 import { api, ApiError } from "@/lib/api/client";
-import { getAccount, safeNext } from "@/lib/auth/customer";
+import { getAccount, loginBlocked, safeNext } from "@/lib/auth/customer";
 
 export type FormState = {
   errors?: Partial<Record<"name" | "email" | "password" | "confirm" | "form", string>>;
@@ -31,6 +31,8 @@ export async function logIn(_prev: FormState | undefined, fd: FormData): Promise
   if (!EMAIL.test(email)) errors.email = "Enter an email address like name@example.com";
   if (!password) errors.password = "Enter your password";
   if (errors.email || errors.password) return { errors, values: { email } };
+  const blocked = await loginBlocked(email);
+  if (blocked) return { errors: { form: blocked }, values: { email } };
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });

@@ -1161,6 +1161,8 @@ export type Database = {
         };
         Returns: string;
       };
+      revoke_user_sessions: { Args: { p_user_id: string }; Returns: undefined };
+      session_is_active: { Args: { p_session_id: string }; Returns: boolean };
     };
     Enums: {
       auth_token_purpose: 'verify_email' | 'reset_password';

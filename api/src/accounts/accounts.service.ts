@@ -108,12 +108,11 @@ export class AccountsService {
     const { data: profile } = await this.supabase.admin
       .from('profiles')
       .select('id, full_name, email, role')
-      .ilike('email', email)
+      .eq('email', email.toLowerCase())
       .maybeSingle();
-    const matches = profile && profile.email.toLowerCase() === email;
     const canUseDashboard =
       profile?.role === 'owner' || profile?.role === 'manager';
-    if (matches && (area === 'shop' || canUseDashboard)) {
+    if (profile && (area === 'shop' || canUseDashboard)) {
       const page = area === 'owner' ? '/owner/reset-password' : undefined;
       const url = await this.tokens.createLink(
         profile.id,
@@ -149,6 +148,12 @@ export class AccountsService {
       { password },
     );
     if (error) throw error;
+    // Log the account out everywhere: whoever knew the old password loses access.
+    const { error: revokeError } = await this.supabase.admin.rpc(
+      'revoke_user_sessions',
+      { p_user_id: found.userId },
+    );
+    if (revokeError) throw revokeError;
     await this.markVerified(found.userId);
     return { email: data.user.email! };
   }

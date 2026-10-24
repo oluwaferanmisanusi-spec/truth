@@ -87,11 +87,10 @@ export class BarberInvitesService {
   async hasAccount(email: string) {
     const { data } = await this.supabase.admin
       .from('profiles')
-      .select('email')
-      .ilike('email', email);
-    return (data ?? []).some(
-      (p) => p.email.toLowerCase() === email.toLowerCase(),
-    );
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .limit(1);
+    return (data ?? []).length > 0;
   }
 
   private hasAccountError() {

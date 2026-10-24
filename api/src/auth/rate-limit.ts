@@ -101,14 +101,40 @@ export class RateLimitGuard implements CanActivate {
     const key = this.config.get('INTERNAL_API_KEY', { infer: true });
     const sent = req.header('x-internal-key');
     const forwarded = req.header('x-visitor-ip');
-    if (key && sent && forwarded && sameSecret(sent, key)) return forwarded;
-    return (
+    if (key && sent && forwarded && sameSecret(sent, key))
+      return network(forwarded);
+    return network(
       req.header('x-real-ip') ??
-      req.header('x-forwarded-for')?.split(',')[0]?.trim() ??
-      req.ip ??
-      'unknown'
+        req.header('x-forwarded-for')?.split(',')[0]?.trim() ??
+        req.ip ??
+        'unknown',
     );
   }
+}
+
+/**
+ * IPv6 addresses count by their /64 network: one home or phone gets a whole /64, so
+ * counting single addresses would let someone dodge the limits by changing address.
+ */
+export function network(ip: string) {
+  if (!ip.includes(':')) return ip;
+  if (ip.startsWith('::ffff:') && ip.includes('.')) return ip.slice(7); // IPv4 in IPv6 form
+  const [head, tail] = ip.split('%')[0].split('::');
+  const left = head ? head.split(':') : [];
+  const right = tail ? tail.split(':') : [];
+  const groups =
+    tail === undefined
+      ? left
+      : [
+          ...left,
+          ...Array<string>(8 - left.length - right.length).fill('0'),
+          ...right,
+        ];
+  const prefix = groups
+    .slice(0, 4)
+    .map((g) => parseInt(g || '0', 16).toString(16))
+    .join(':');
+  return `${prefix}::/64`;
 }
 
 export function sameSecret(a: string, b: string) {

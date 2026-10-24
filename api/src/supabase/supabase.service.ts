@@ -24,23 +24,28 @@ export class SupabaseService {
     // getClaims checks the token's signature and expiry before trusting what it says.
     const { data, error } = await this.admin.auth.getClaims(token);
     const userId = data?.claims.sub;
-    if (error || !userId) return null;
+    const sessionId = data?.claims.session_id;
+    if (error || !userId || typeof sessionId !== 'string') return null;
 
-    const [{ data: profile }, { data: barber }] = await Promise.all([
-      this.admin
-        .from('profiles')
-        .select('id, full_name, email, role, email_verified_at')
-        .eq('id', userId)
-        .maybeSingle(),
-      // Deactivated barbers keep the link to their login but lose the barber side.
-      this.admin
-        .from('barbers')
-        .select('id')
-        .eq('profile_id', userId)
-        .eq('status', 'active')
-        .maybeSingle(),
-    ]);
-    if (!profile) return null;
+    const [{ data: profile }, { data: barber }, { data: active }] =
+      await Promise.all([
+        this.admin
+          .from('profiles')
+          .select('id, full_name, email, role, email_verified_at')
+          .eq('id', userId)
+          .maybeSingle(),
+        // Deactivated barbers keep the link to their login but lose the barber side.
+        this.admin
+          .from('barbers')
+          .select('id')
+          .eq('profile_id', userId)
+          .eq('status', 'active')
+          .maybeSingle(),
+        // Logged out, password reset or removed: the token's session is gone, so refuse it now
+        // rather than when the token expires.
+        this.admin.rpc('session_is_active', { p_session_id: sessionId }),
+      ]);
+    if (!profile || !active) return null;
     return {
       id: profile.id,
       email: profile.email,

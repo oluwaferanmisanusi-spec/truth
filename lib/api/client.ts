@@ -11,7 +11,11 @@ const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
 
 /** The visitor's IP, so the API's attempt limits count each visitor, not our server. */
 async function visitorHeaders(): Promise<Record<string, string>> {
-  if (!INTERNAL_API_KEY) return {};
+  if (!INTERNAL_API_KEY) {
+    // Without it the API counts every visitor as one, so the attempt limits hit everyone.
+    if (process.env.NODE_ENV === "production") console.error("INTERNAL_API_KEY is not set");
+    return {};
+  }
   const h = await headers();
   const ip = h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0]?.trim();
   return ip ? { "X-Internal-Key": INTERNAL_API_KEY, "X-Visitor-IP": ip } : {};

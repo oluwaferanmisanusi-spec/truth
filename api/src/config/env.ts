@@ -20,8 +20,16 @@ const schema = z.object({
 
 export type Env = z.infer<typeof schema>;
 
+/** Optional while developing; the live API refuses to start without them. */
+const production = schema.refine(
+  (env) => env.CRON_SECRET && env.INTERNAL_API_KEY,
+  { message: 'CRON_SECRET and INTERNAL_API_KEY are required in production' },
+);
+
 export function validateEnv(raw: Record<string, unknown>): Env {
-  const result = schema.safeParse(raw);
+  const result = (
+    raw.NODE_ENV === 'production' ? production : schema
+  ).safeParse(raw);
   if (!result.success) {
     const missing = result.error.issues.map((i) => i.path.join('.')).join(', ');
     throw new Error(`API settings missing or invalid in api/.env: ${missing}`);

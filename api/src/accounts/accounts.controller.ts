@@ -21,10 +21,27 @@ const ResetRequest = z.object({
   area: z.enum(['shop', 'owner']).default('shop'),
 });
 const NewPasswordBody = z.object({ password: NewPassword });
+const LoginAttempt = z.object({ email: z.string().max(254) });
 
 @Controller()
 export class AccountsController {
   constructor(private readonly accounts: AccountsService) {}
+
+  /**
+   * The website asks before every log in (logging in itself goes straight to Supabase).
+   * It answers 429 once a visitor or an email has had too many tries; Supabase would
+   * otherwise count every visitor under the website's server address.
+   */
+  @Public()
+  @RateLimit(
+    { name: 'login', limit: 10, windowSeconds: 15 * 60, by: 'ip' },
+    perHour('login', 20, 'email'),
+  )
+  @Post('login-attempts')
+  @HttpCode(204)
+  loginAttempt(
+    @Body({ schema: LoginAttempt }) _body: z.output<typeof LoginAttempt>,
+  ) {}
 
   @Public()
   @RateLimit(perHour('sign-up', 5))

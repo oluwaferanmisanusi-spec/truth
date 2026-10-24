@@ -130,9 +130,10 @@ export class OwnerBarbersService {
     // Barber logins are barber-only, so a customer's email can't become a barber's.
     const { data: existing } = await this.supabase.admin
       .from('profiles')
-      .select('email')
-      .ilike('email', email);
-    if (existing?.some((p) => p.email.toLowerCase() === email)) {
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .limit(1);
+    if (existing?.length) {
       throw new ConflictException({
         message:
           'This email already has a customer account. Barbers need their own email to log in, so ask them for a different one.',

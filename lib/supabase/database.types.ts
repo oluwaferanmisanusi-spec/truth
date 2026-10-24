@@ -686,6 +686,12 @@ isOneToOne: false
                            },
 "record_payment":
 { Args: { "p_amount_kobo": number,"p_paid_at": string,"p_raw": Json,"p_reference": string,"p_success": boolean }; Returns: string
+                           },
+"revoke_user_sessions":
+{ Args: { "p_user_id": string }; Returns: undefined
+                           },
+"session_is_active":
+{ Args: { "p_session_id": string }; Returns: boolean
                            }
           }
           Enums: {
