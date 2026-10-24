@@ -5,7 +5,7 @@ export type BarberInvite =
   | {
       state: 'valid';
       email: string;
-      /** The email already has a login: they log in to join instead of setting a password. */
+      /** The email already has a customer login. Barbers need their own email, so it can't be used. */
       hasAccount: boolean;
       expiresAt: string;
     }
@@ -89,6 +89,8 @@ export type ShopHours = {
   open: { weekday: number; opensAt: string; closesAt: string }[];
   /** Holidays from today on, as "YYYY-MM-DD". */
   holidays: string[];
+  /** Whole-day blocks must start at least this many days ahead. */
+  leaveNoticeDays: number;
 };
 
 /** POST /barber/blocks */

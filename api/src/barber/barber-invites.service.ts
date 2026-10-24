@@ -1,16 +1,14 @@
-// Accepting a barber invite (Figma 4.1, 4.2). A new person sets a password here; someone
-// whose email already has a login (say, a regular customer) logs in and joins with it, so
-// they keep one account for booking and for their schedule.
+// Accepting a barber invite (Figma 4.1, 4.2): the barber sets a password and gets a
+// barber-only login. Barbers never book as customers, so an email that already has a
+// customer login can't be used; the owner invites a different one.
 import {
   ConflictException,
-  ForbiddenException,
   GoneException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { hashToken } from '../common/tokens.js';
 import type { BarberInvite } from '../contracts/barber.js';
-import type { Me } from '../contracts/me.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 
 @Injectable()
@@ -66,14 +64,6 @@ export class BarberInvitesService {
     return { email: invite.email };
   }
 
-  /** "Join" for someone already logged in with the invited email. */
-  async acceptAsMe(token: string, me: Me) {
-    const invite = await this.get(token);
-    if (invite.state !== 'valid') throw this.notUsable(invite.state);
-    await this.accept(token, me.id, '');
-    return { joined: true };
-  }
-
   private async accept(token: string, profileId: string, fullName: string) {
     const { error } = await this.supabase.admin.rpc('accept_barber_invite', {
       p_token_hash: hashToken(token),
@@ -85,13 +75,6 @@ export class BarberInvitesService {
       throw this.notUsable('expired');
     if (error.message.includes('invite_missing'))
       throw this.notUsable('missing');
-    if (error.message.includes('email_mismatch')) {
-      throw new ForbiddenException({
-        message:
-          'This invite is for a different email. Log out, then log in with the email the shop invited.',
-        code: 'wrong_account',
-      });
-    }
     if (error.message.includes('already_barber')) {
       throw new ConflictException({
         message: 'This account is already set up as a barber.',
@@ -101,7 +84,7 @@ export class BarberInvitesService {
     throw error;
   }
 
-  private async hasAccount(email: string) {
+  async hasAccount(email: string) {
     const { data } = await this.supabase.admin
       .from('profiles')
       .select('email')
@@ -114,7 +97,7 @@ export class BarberInvitesService {
   private hasAccountError() {
     return new ConflictException({
       message:
-        'There’s already an account with this email. Log in to join the shop.',
+        'There’s already a customer account with this email. Barbers need their own email, so ask the shop owner to invite a different one.',
       code: 'has_account',
     });
   }

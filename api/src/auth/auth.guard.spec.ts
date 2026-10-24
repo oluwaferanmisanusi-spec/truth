@@ -18,11 +18,13 @@ const owner: Me = {
   barberId: null,
 };
 const customer: Me = { ...owner, id: 'u2', role: 'customer' };
-const barber: Me = { ...customer, id: 'u3', barberId: 'b1' };
+const barber: Me = { ...owner, id: 'u3', role: 'barber', barberId: 'b1' };
+const inactive: Me = { ...barber, id: 'u4', barberId: null };
 const tokens: Record<string, Me> = {
   'owner-token': owner,
   'customer-token': customer,
   'barber-token': barber,
+  'inactive-token': inactive,
 };
 
 const supabase = {
@@ -78,7 +80,7 @@ describe('AuthGuard', () => {
     );
   });
 
-  it('lets only active barbers through @Roles(barber), and they can still use customer routes', async () => {
+  it('lets only active barbers through @Roles(barber)', async () => {
     expect(await run({ roles: ['barber'] }, 'Bearer barber-token').result).toBe(
       true,
     );
@@ -88,6 +90,11 @@ describe('AuthGuard', () => {
     await expect(
       run({ roles: ['owner'] }, 'Bearer barber-token').result,
     ).rejects.toThrow(ForbiddenException);
-    expect(await run({}, 'Bearer barber-token').result).toBe(true);
+    await expect(
+      run({ roles: ['barber'] }, 'Bearer inactive-token').result,
+    ).rejects.toThrow(ForbiddenException);
+    await expect(
+      run({ roles: ['customer', 'owner'] }, 'Bearer barber-token').result,
+    ).rejects.toThrow(ForbiddenException);
   });
 });

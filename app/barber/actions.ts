@@ -37,23 +37,11 @@ export async function acceptInvite(token: string, _prev: InviteState | undefined
   } catch (error) {
     if (!(error instanceof ApiError) || error.status >= 500) throw error;
     if (error.status === 400) return { errors: error.fieldErrors, values: { name } };
-    // Expired, used, or the email now has an account: the page shows what to do next.
+    // Expired, used, or the email has a customer account: the page shows what to do next.
     redirect(invitePage(token));
   }
   const supabase = await createClient();
   await supabase.auth.signInWithPassword({ email, password });
-  redirect("/barber?joined=1");
-}
-
-/** "Join as a barber" for someone already logged in with the invited email. */
-export async function joinInvite(token: string): Promise<{ error?: string }> {
-  try {
-    await api(`/barber-invites/${encodeURIComponent(token)}/join`, { method: "POST" });
-  } catch (error) {
-    if (!(error instanceof ApiError) || error.status >= 500) throw error;
-    if (error.status === 404 || error.status === 410) redirect(invitePage(token));
-    return { error: error.message };
-  }
   redirect("/barber?joined=1");
 }
 

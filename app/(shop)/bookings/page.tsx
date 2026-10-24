@@ -1,7 +1,8 @@
 // My bookings (Figma 3.7 upcoming, 3.8 past, 3.9 empty, 3.23 not verified, 3.24 guest bookings added).
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import { CalendarClock, CalendarDays, ChevronRight, UserRound } from "lucide-react";
+import { CalendarDays, ChevronRight, UserRound } from "lucide-react";
 import { StepBar, BottomBar } from "@/components/shop/bars";
 import { LogoutButton } from "@/components/shop/logout-button";
 import { BookingStatusBadge } from "@/components/status-badge";
@@ -29,6 +30,7 @@ export default function MyBookingsPage({ searchParams }: Props) {
 
 async function MyBookings({ searchParams }: Pick<Props, "searchParams">) {
   const [account, query] = await Promise.all([requireAccount("/bookings"), searchParams]);
+  if (account.role === "barber") redirect("/barber"); // barber logins don't book
   const { upcoming, past } = await api<MyBookings>("/me/bookings");
   const tab = query.tab === "past" ? "past" : "upcoming";
   const list = tab === "past" ? past : upcoming;
@@ -37,13 +39,6 @@ async function MyBookings({ searchParams }: Pick<Props, "searchParams">) {
   return (
     <main className="flex flex-1 flex-col">
       <div className="flex flex-col gap-6 px-4 py-6">
-        {account.barberId && (
-          // Barbers book as customers too; this takes them back to their own schedule.
-          <Link href="/barber" className={`${buttonClass.secondary} w-full`}>
-            <CalendarClock aria-hidden size={20} />
-            Go to my schedule
-          </Link>
-        )}
         {!account.verified && <VerifyBanner email={account.email} action={resendVerification} />}
         {account.verified && added > 0 && (
           <Alert variant="success" title={`We added ${added} ${added === 1 ? "booking" : "bookings"} you made as a guest`}>

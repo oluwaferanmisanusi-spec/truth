@@ -82,6 +82,7 @@ export class BarberBlocksService {
     );
     if (error?.message.includes('in_the_past'))
       throw fieldError('from', 'Choose today or a later date.');
+    if (error?.message.includes('too_soon')) throw await this.tooSoon();
     if (error?.message.includes('no_open_days'))
       throw fieldError('to', 'The shop is closed on all of these days.');
     if (error?.message.includes('overlaps_booking'))
@@ -117,6 +118,20 @@ export class BarberBlocksService {
       endsAt: block.ends_at,
       isWholeDay: block.is_whole_day,
     };
+  }
+
+  /** "Whole days need at least 3 days’ notice. Choose Tue 27 Oct or later." */
+  private async tooSoon() {
+    const { data } = await this.supabase.admin
+      .from('shop_settings')
+      .select('leave_notice_days')
+      .single();
+    const days = data?.leave_notice_days ?? 0;
+    const first = formatDay(`${addDays(shopToday(), days)}T12:00:00Z`);
+    return fieldError(
+      'from',
+      `Whole days need at least ${days} ${days === 1 ? 'day’s' : 'days’'} notice. Choose ${first} or later.`,
+    );
   }
 
   private async openingHours(date: string) {

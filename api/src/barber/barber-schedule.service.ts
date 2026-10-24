@@ -90,15 +90,17 @@ export class BarberScheduleService {
 
   async shopHours(): Promise<ShopHours> {
     const db = this.supabase.admin;
-    const [opening, holidays] = await Promise.all([
+    const [opening, holidays, settings] = await Promise.all([
       db
         .from('opening_hours')
         .select('weekday, opens_at, closes_at')
         .eq('is_open', true),
       db.from('holidays').select('date').gte('date', shopToday()),
+      db.from('shop_settings').select('leave_notice_days').single(),
     ]);
     if (opening.error) throw opening.error;
     if (holidays.error) throw holidays.error;
+    if (settings.error) throw settings.error;
     return {
       open: opening.data.map((o) => ({
         weekday: o.weekday,
@@ -106,6 +108,7 @@ export class BarberScheduleService {
         closesAt: o.closes_at?.slice(0, 5) ?? '19:00',
       })),
       holidays: holidays.data.map((h) => h.date),
+      leaveNoticeDays: settings.data.leave_notice_days,
     };
   }
 

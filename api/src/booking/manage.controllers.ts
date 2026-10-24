@@ -11,7 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { CurrentUser, Public } from '../auth/decorators.js';
+import { CurrentUser, Public, Roles } from '../auth/decorators.js';
 import { Id, IsoDate, LinkToken } from '../config/validation.js';
 import type {
   ManagedBooking,
@@ -51,7 +51,8 @@ class ManageRoutes {
   }
 }
 
-/** Not @Public: the guard only lets logged-in customers in, and only their own bookings come back. */
+/** Logged-in customers (and the owner) only; barber logins don't book. Only their own bookings come back. */
+@Roles('customer', 'owner')
 @Controller('me/bookings')
 export class MyBookingsController extends ManageRoutes {
   constructor(manage: ManageService) {

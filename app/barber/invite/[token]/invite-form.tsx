@@ -1,8 +1,7 @@
 "use client";
 
-// "Create account" on the invite (Figma 4.1), and "Join" for someone already logged in
-// with the invited email.
-import { useActionState, useState, useTransition } from "react";
+// "Create account" on the invite (Figma 4.1).
+import { useActionState } from "react";
 import { Alert } from "@/components/alert";
 import { TextField } from "@/components/form-field";
 import { PasswordField } from "@/components/password-field";
@@ -26,19 +25,5 @@ export function InviteForm({ token, email }: { token: string; email: string }) {
         {pending ? "Creating your account…" : "Create account"}
       </button>
     </form>
-  );
-}
-
-export function JoinButton({ join }: { join: () => Promise<{ error?: string }> }) {
-  const [error, setError] = useState<string>();
-  const [pending, startTransition] = useTransition();
-  return (
-    <div className="flex flex-col gap-3">
-      {error && <Alert variant="danger" role="alert">{error}</Alert>}
-      <button type="button" className={`${buttonClass.primary} w-full`} disabled={pending}
-        onClick={() => startTransition(async () => setError((await join())?.error))}>
-        {pending ? "Joining…" : "Join as a barber"}
-      </button>
-    </div>
   );
 }

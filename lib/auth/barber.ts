@@ -4,10 +4,11 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { getAccount } from "@/lib/auth/customer";
 
-/** Logged-out visitors go to log in; anyone who isn't an active barber goes to My bookings. */
+/** Logged out → log in; a deactivated barber → the "no longer active" page; anyone else → home. */
 export async function requireBarber(next = "/barber") {
   const account = await getAccount();
   if (!account) redirect(`/login?next=${encodeURIComponent(next)}`);
-  if (!account.barberId) redirect("/bookings");
+  if (account.role !== "barber") redirect("/");
+  if (!account.barberId) redirect("/barber/inactive");
   return account;
 }

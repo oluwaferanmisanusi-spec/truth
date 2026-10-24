@@ -60,16 +60,6 @@ export class BarberInvitesController {
   ) {
     return this.invites.acceptWithNewAccount(token, body.name, body.password);
   }
-
-  /** Already has a login with the invited email: joins with it. */
-  @Post('join')
-  @HttpCode(200)
-  join(
-    @Param('token', { schema: LinkToken }) token: string,
-    @CurrentUser() me: Me,
-  ) {
-    return this.invites.acceptAsMe(token, me);
-  }
 }
 
 const DayQuery = z.object({ date: IsoDate.optional() });

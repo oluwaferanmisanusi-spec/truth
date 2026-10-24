@@ -91,8 +91,10 @@ export class BookingController {
   pay(
     @Param('id', { schema: Id }) id: string,
     @Body() body: unknown,
-    @CurrentUser() user: Me | null,
+    @CurrentUser() current: Me | null,
   ) {
+    // Barber logins don't book as customers: treat them like a guest.
+    const user = current?.role === 'barber' ? null : current;
     // Logged in: the account's name and email. Guest: what they typed.
     const details = parseOrThrow(
       Details,

@@ -127,6 +127,18 @@ export class OwnerBarbersService {
 
   /** Invite barber (5.9). Emails the link, and returns it so the owner can also share it. */
   async invite(email: string): Promise<Invite> {
+    // Barber logins are barber-only, so a customer's email can't become a barber's.
+    const { data: existing } = await this.supabase.admin
+      .from('profiles')
+      .select('email')
+      .ilike('email', email);
+    if (existing?.some((p) => p.email.toLowerCase() === email)) {
+      throw new ConflictException({
+        message:
+          'This email already has a customer account. Barbers need their own email to log in, so ask them for a different one.',
+        code: 'email_has_account',
+      });
+    }
     const { token, hash, expiresAt } = this.newInvite();
     const { error } = await this.supabase.admin.rpc('owner_invite_barber', {
       p_email: email,

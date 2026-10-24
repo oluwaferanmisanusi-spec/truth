@@ -20,7 +20,9 @@ export async function inviteBarber(_prev: InviteResult, formData: FormData): Pro
     return invite;
   } catch (error) {
     if (error instanceof ApiError && error.fieldErrors.email) return { error: error.fieldErrors.email, email };
-    if (error instanceof ApiError && error.code === "email_taken") return { error: error.message, email };
+    if (error instanceof ApiError && (error.code === "email_taken" || error.code === "email_has_account")) {
+      return { error: error.message, email };
+    }
     console.error("Invite failed", error);
     return { error: "Something went wrong and the invite wasn’t sent. Please try again.", email };
   }

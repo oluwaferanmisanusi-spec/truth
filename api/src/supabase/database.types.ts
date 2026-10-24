@@ -614,6 +614,7 @@ export type Database = {
           booking_window_days: number;
           hold_minutes: number;
           id: boolean;
+          leave_notice_days: number;
           min_notice_hours: number;
           name: string;
           no_show_grace_minutes: number;
@@ -628,6 +629,7 @@ export type Database = {
           booking_window_days?: number;
           hold_minutes?: number;
           id?: boolean;
+          leave_notice_days?: number;
           min_notice_hours?: number;
           name: string;
           no_show_grace_minutes?: number;
@@ -641,6 +643,7 @@ export type Database = {
           booking_window_days?: number;
           hold_minutes?: number;
           id?: boolean;
+          leave_notice_days?: number;
           min_notice_hours?: number;
           name?: string;
           no_show_grace_minutes?: number;

@@ -7,11 +7,11 @@ export type Me = {
   id: string;
   email: string;
   fullName: string;
-  /** 'owner' or 'customer'. Being a barber is barberId, not a role, so it can come and go. */
+  /** Barber logins are barber-only: a barber never books as a customer. */
   role: Role;
   /** Has clicked the link in the verification email. */
   verified: boolean;
-  /** Their barber record while the owner has them as an active barber, else null. */
+  /** A barber's record while the owner has them as active; null when deactivated, and for everyone else. */
   barberId: string | null;
 };
 

@@ -38,7 +38,7 @@ export function BarberStatusCard({ id, firstName, status, upcoming, bookingsHref
         <p className="text-small text-ink-muted">
           {status === "invited"
             ? `They haven’t set up their account yet.${inviteExpiry ? ` The invite expires on ${inviteExpiry}.` : " The invite has expired."}`
-            : "Deactivated barbers can’t see their schedule and aren’t shown to customers. They can still book as customers, and their past bookings stay in your records."}
+            : "Deactivated barbers can’t log in and aren’t shown to customers. Their past bookings stay in your records."}
         </p>
       </div>
       <div><RecordStatusBadge status={status} /></div>

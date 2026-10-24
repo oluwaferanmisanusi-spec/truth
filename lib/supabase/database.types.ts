@@ -321,14 +321,14 @@ isOneToOne: false
                   ]
                 },"shop_settings": {
                   Row: {
-                    "address": string,"booking_window_days": number,"hold_minutes": number,"id": boolean,"min_notice_hours": number,"name": string,"no_show_grace_minutes": number,"refund_window_hours": number,"slot_step_minutes": number,"time_zone": string,"updated_at": string
+                    "address": string,"booking_window_days": number,"hold_minutes": number,"id": boolean,"leave_notice_days": number,"min_notice_hours": number,"name": string,"no_show_grace_minutes": number,"refund_window_hours": number,"slot_step_minutes": number,"time_zone": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "address": string,"booking_window_days"?: number,"hold_minutes"?: number,"id"?: boolean,"min_notice_hours"?: number,"name": string,"no_show_grace_minutes"?: number,"refund_window_hours"?: number,"slot_step_minutes"?: number,"time_zone"?: string,"updated_at"?: string
+                    "address": string,"booking_window_days"?: number,"hold_minutes"?: number,"id"?: boolean,"leave_notice_days"?: number,"min_notice_hours"?: number,"name": string,"no_show_grace_minutes"?: number,"refund_window_hours"?: number,"slot_step_minutes"?: number,"time_zone"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "address"?: string,"booking_window_days"?: number,"hold_minutes"?: number,"id"?: boolean,"min_notice_hours"?: number,"name"?: string,"no_show_grace_minutes"?: number,"refund_window_hours"?: number,"slot_step_minutes"?: number,"time_zone"?: string,"updated_at"?: string
+                    "address"?: string,"booking_window_days"?: number,"hold_minutes"?: number,"id"?: boolean,"leave_notice_days"?: number,"min_notice_hours"?: number,"name"?: string,"no_show_grace_minutes"?: number,"refund_window_hours"?: number,"slot_step_minutes"?: number,"time_zone"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     

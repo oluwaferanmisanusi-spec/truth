@@ -2,7 +2,8 @@
 
 // The Block time form (Figma 4.11, 4.11b). "Part of a day" picks times within the shop's
 // opening hours; "Whole days" blocks opening to closing on each day the shop is open, so the
-// button counts only those days ("Block 5 days"). The API checks everything again.
+// button counts only those days ("Block 5 days"), and must start the shop's notice period
+// ahead (3 days, decided 2026-10-24). The API checks everything again.
 import { useActionState, useState } from "react";
 import { Calendar, CircleAlert, Clock } from "lucide-react";
 import type { ShopHours } from "@api/barber";
@@ -45,8 +46,11 @@ export function BlockForm({ back, start, today, hours }: Props) {
   const e = state?.errors ?? {};
   const [kind, setKind] = useState<"part" | "days">(v.kind === "days" ? "days" : "part");
   const [date, setDate] = useState(v.date || start);
-  const [fromDay, setFromDay] = useState(v.fromDay || start);
-  const [toDay, setToDay] = useState(v.toDay || start);
+  // Whole days need notice (shop setting): the first day they can block.
+  const firstLeaveDay = addDays(today, hours.leaveNoticeDays);
+  const leaveStart = start > firstLeaveDay ? start : firstLeaveDay;
+  const [fromDay, setFromDay] = useState(v.fromDay || leaveStart);
+  const [toDay, setToDay] = useState(v.toDay || leaveStart);
 
   const times = timesFor(date || start, hours);
   const defaultFrom = v.from || (times.includes("12:00") ? "12:00" : times[0]);
@@ -98,12 +102,12 @@ export function BlockForm({ back, start, today, hours }: Props) {
         </div>
 
         <div className={`grid grid-cols-2 gap-4 ${kind === "days" ? "" : "hidden"}`}>
-          <DateInput id="fromDay" label="From" value={fromDay} min={today} error={e.fromDay}
+          <DateInput id="fromDay" label="From" value={fromDay} min={firstLeaveDay} error={e.fromDay}
             onChange={(d) => {
               setFromDay(d);
               if (d && toDay < d) setToDay(d);
             }} />
-          <DateInput id="toDay" label="To" value={toDay} min={fromDay || today} onChange={setToDay} error={e.toDay} />
+          <DateInput id="toDay" label="To" value={toDay} min={fromDay || firstLeaveDay} onChange={setToDay} error={e.toDay} />
         </div>
 
         <TextField id="reason" label="Reason (optional)" defaultValue={v.reason} maxLength={60}
@@ -113,7 +117,9 @@ export function BlockForm({ back, start, today, hours }: Props) {
         <p className="text-caption text-ink-muted">
           {kind === "part"
             ? `All times are West Africa Time (${SHOP_TIME_ZONE_LABEL})`
-            : "Blocks each whole day, from opening to closing."}
+            : `Blocks each whole day, from opening to closing. Whole days need at least ${hours.leaveNoticeDays} ${
+                hours.leaveNoticeDays === 1 ? "day’s" : "days’"
+              } notice.`}
         </p>
       </div>
 

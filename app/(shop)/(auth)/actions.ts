@@ -38,8 +38,18 @@ export async function logIn(_prev: FormState | undefined, fd: FormData): Promise
     return { errors: { form: "The email or password is incorrect. Check them and try again." }, values: { email } };
   }
   const account = await getAccount();
-  // Barbers land on their schedule; they can switch to My bookings from the person menu.
-  const fallback = account?.role === "owner" ? "/owner/bookings" : account?.barberId ? "/barber" : "/bookings";
+  if (account?.role === "barber") {
+    // Barber logins are barber-only: straight to their schedule, never a booking.
+    if (!account.barberId) {
+      await supabase.auth.signOut();
+      return {
+        errors: { form: "Your barber account isn’t active any more. Ask the shop owner if you think this is a mistake." },
+        values: { email },
+      };
+    }
+    redirect("/barber");
+  }
+  const fallback = account?.role === "owner" ? "/owner/bookings" : "/bookings";
   redirect(holdPath(fd) ?? safeNext(fd.get("next"), fallback));
 }
 

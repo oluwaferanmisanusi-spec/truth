@@ -20,7 +20,7 @@ From the repo root, `npm run dev:api` does the same.
 |---|---|
 | `main.ts`, `app.module.ts` | Starts the server; plugs the modules together |
 | `config/` | Settings check at start-up (`env.ts`); input validation (`validation.ts`) |
-| `auth/` | The guard on every route, `@Public()` / `@Roles()` / `@CurrentUser()`, `GET /me`. A barber is anyone with an active `barbers` row linked to their login (`Me.barberId`), not a profile role, so the same login also books as a customer |
+| `auth/` | The guard on every route, `@Public()` / `@Roles()` / `@CurrentUser()`, `GET /me`. Barber logins are barber-only: `@Roles('barber')` needs the barber role plus an active `barbers` row (`Me.barberId`) |
 | `supabase/` | The one database connection (service role) and generated types |
 | `shop/` | `GET /shop`, `GET /services` (public) |
 | `booking/` | Booking flow (holds, Paystack, webhook) and managing a booking (account + guest link) |

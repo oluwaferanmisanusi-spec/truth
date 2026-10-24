@@ -12,9 +12,9 @@ import type { Me, Role } from '../contracts/me.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { IS_PUBLIC, ROLES, type AuthedRequest } from './decorators.js';
 
-/** Barbers are whoever has an active barber record; other roles come from the profile. */
+/** A deactivated barber keeps the barber role but loses access, so check they're active too. */
 const hasRole = (user: Me, role: Role) =>
-  role === 'barber' ? user.barberId !== null : user.role === role;
+  user.role === role && (role !== 'barber' || user.barberId !== null);
 
 @Injectable()
 export class AuthGuard implements CanActivate {
