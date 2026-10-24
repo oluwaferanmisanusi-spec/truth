@@ -1,8 +1,8 @@
-// Data for the owner Bookings screen (Figma 5.1). Reads through the owner's own session,
-// so row-level security still applies.
+// Data for the owner Bookings screen (Figma 5.1), from the API's /owner routes.
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
-import { addDays, isIsoDate, shopDayStart, shopToday } from "@/lib/format";
+import type { BookingFilterOptions, OwnerBooking } from "@api/owner";
+import { api } from "@/lib/api/client";
+import { isIsoDate, shopToday } from "@/lib/format";
 import { BOOKING_STATUS_LABELS, type BookingStatus } from "@/components/status-badge";
 
 export type BookingFilters = {
@@ -40,47 +40,14 @@ export function parseFilters(params: SearchParams): BookingFilters {
 }
 
 export async function listBookings(filters: BookingFilters) {
-  const supabase = await createClient();
-  let query = supabase
-    .from("bookings")
-    .select(
-      "id, reference, starts_at, customer_name, customer_email, service_name, price_kobo, status, barber:barbers!bookings_barber_id_fkey(full_name)",
-    )
-    .gte("starts_at", shopDayStart(filters.from))
-    .lt("starts_at", shopDayStart(addDays(filters.to, 1)))
-    .neq("status", "expired")
-    .is("reschedule_of", null) // a customer's held new time, not a booking of its own
-    .order("starts_at")
-    .order("customer_name")
-    .limit(1000);
-
-  if (filters.barber) query = query.eq("barber_id", filters.barber);
-  if (filters.service) query = query.eq("service_id", filters.service);
-  if (filters.status) query = query.eq("status", filters.status);
-
-  const { data, error } = await query;
-  if (error) throw error;
-
-  // Owners can cancel confirmed bookings that haven't started (the database re-checks this).
-  const now = Date.now();
-  return data.map((b) => ({
-    ...b,
-    cancellable: b.status === "confirmed" && new Date(b.starts_at).getTime() > now,
-  }));
+  const query = new URLSearchParams({ from: filters.from, to: filters.to });
+  if (filters.barber) query.set("barber", filters.barber);
+  if (filters.service) query.set("service", filters.service);
+  if (filters.status) query.set("status", filters.status);
+  return api<OwnerBooking[]>(`/owner/bookings?${query}`);
 }
 
 export async function listFilterOptions() {
-  const supabase = await createClient();
-  const [barbers, services] = await Promise.all([
-    supabase.from("barbers").select("id, full_name").not("full_name", "is", null).order("sort_order"),
-    supabase.from("services").select("id, name").order("sort_order"),
-  ]);
-  if (barbers.error) throw barbers.error;
-  if (services.error) throw services.error;
-
-  return {
-    barbers: barbers.data.map((b) => ({ value: b.id, label: b.full_name! })),
-    services: services.data.map((s) => ({ value: s.id, label: s.name })),
-    statuses: FILTER_STATUSES.map((s) => ({ value: s, label: BOOKING_STATUS_LABELS[s] })),
-  };
+  const options = await api<BookingFilterOptions>("/owner/booking-filters");
+  return { ...options, statuses: FILTER_STATUSES.map((s) => ({ value: s, label: BOOKING_STATUS_LABELS[s] })) };
 }

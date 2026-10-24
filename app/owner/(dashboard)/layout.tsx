@@ -17,7 +17,7 @@ async function OwnerShell({ children }: { children: React.ReactNode }) {
   const owner = await requireOwner();
   return (
     <div className="flex min-h-screen">
-      <OwnerSidebar name={owner.full_name || "Shop owner"} email={owner.email} />
+      <OwnerSidebar name={owner.fullName || "Shop owner"} email={owner.email} />
       <main className="flex min-w-0 flex-1 flex-col gap-8 p-10">{children}</main>
     </div>
   );

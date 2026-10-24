@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getBarberName, listBarbers } from "@/lib/owner/barbers";
+import { getBarber, listBarbers } from "@/lib/owner/barbers";
 import { BarbersList } from "./barbers-list";
 
 export const metadata: Metadata = { title: "Barbers" };
@@ -20,14 +20,14 @@ async function Barbers({ searchParams }: { searchParams: PageProps<"/owner/barbe
   const { deactivated } = await searchParams;
   const [{ barbers, activeServiceCount }, deactivatedBarber] = await Promise.all([
     listBarbers(),
-    typeof deactivated === "string" && UUID.test(deactivated) ? getBarberName(deactivated) : null,
+    typeof deactivated === "string" && UUID.test(deactivated) ? getBarber(deactivated).catch(() => null) : null,
   ]);
 
   return (
     <BarbersList
       barbers={barbers}
       activeServiceCount={activeServiceCount}
-      deactivatedName={deactivatedBarber?.full_name ?? undefined}
+      deactivatedName={deactivatedBarber?.fullName ?? undefined}
     />
   );
 }

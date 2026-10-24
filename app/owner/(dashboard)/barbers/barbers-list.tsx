@@ -14,7 +14,7 @@ import { inviteBarber, resendInvite, type InviteResult } from "./actions";
 
 type Barber = {
   id: string;
-  full_name: string | null;
+  fullName: string | null;
   email: string;
   status: "active" | "inactive" | "invited";
   initials: string;
@@ -102,7 +102,7 @@ export function BarbersList({ barbers, activeServiceCount, deactivatedName }: {
             </thead>
             <tbody>
               {barbers.map((b) => {
-                const name = b.full_name ?? "Invite pending";
+                const name = b.fullName ?? "Invite pending";
                 return (
                   <tr key={b.id} className="h-18 border-b border-border last:border-b-0">
                     <th scope="row" className="py-3 pr-2 pl-5 font-medium">

@@ -8,7 +8,8 @@ import { BookingStatusBadge } from "@/components/status-badge";
 import { Alert } from "@/components/alert";
 import { buttonClass } from "@/components/ui";
 import { requireAccount } from "@/lib/auth/customer";
-import { listCustomerBookings } from "@/lib/booking/manage";
+import type { MyBookings } from "@api/booking";
+import { api } from "@/lib/api/client";
 import { formatDay, formatNaira, formatTime, SHOP_TIME_ZONE_LABEL } from "@/lib/format";
 import { logOut, resendVerification } from "../(auth)/actions";
 import { VerifyBanner } from "../(auth)/resend";
@@ -28,7 +29,7 @@ export default function MyBookingsPage({ searchParams }: Props) {
 
 async function MyBookings({ searchParams }: Pick<Props, "searchParams">) {
   const [account, query] = await Promise.all([requireAccount("/bookings"), searchParams]);
-  const { upcoming, past } = await listCustomerBookings(account.id);
+  const { upcoming, past } = await api<MyBookings>("/me/bookings");
   const tab = query.tab === "past" ? "past" : "upcoming";
   const list = tab === "past" ? past : upcoming;
   const added = Number(query.added);
@@ -68,18 +69,18 @@ async function MyBookings({ searchParams }: Pick<Props, "searchParams">) {
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div className="flex items-center justify-between gap-2">
-                      <h2 className="font-sans text-h3 font-semibold tracking-normal">{b.service_name}</h2>
+                      <h2 className="font-sans text-h3 font-semibold tracking-normal">{b.serviceName}</h2>
                       <BookingStatusBadge status={b.status} />
                     </div>
                     <p className="flex items-center gap-2 text-small text-ink-muted">
                       <CalendarDays aria-hidden size={16} className="shrink-0" />
-                      {formatDay(b.starts_at)}, {formatTime(b.starts_at)} {SHOP_TIME_ZONE_LABEL}
+                      {formatDay(b.startsAt)}, {formatTime(b.startsAt)} {SHOP_TIME_ZONE_LABEL}
                     </p>
                     <p className="flex items-center gap-2 text-small text-ink-muted">
                       <UserRound aria-hidden size={16} className="shrink-0" />
                       with {b.barberName}
                     </p>
-                    <p className="text-small font-semibold">{formatNaira(b.price_kobo)}</p>
+                    <p className="text-small font-semibold">{formatNaira(b.priceKobo)}</p>
                   </div>
                   <ChevronRight aria-hidden size={20} className="shrink-0 text-ink-muted" />
                 </Link>

@@ -69,9 +69,9 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
           </thead>
           <tbody className="text-small">
             {bookings.map((b) => {
-              const day = formatDay(b.starts_at);
-              const time = formatTime(b.starts_at);
-              const barberName = b.barber?.full_name ?? "—";
+              const day = formatDay(b.startsAt);
+              const time = formatTime(b.startsAt);
+              const barberName = b.barberName || "—";
               return (
                 <tr key={b.id} className="h-18 border-b border-border last:border-b-0">
                   <td className="py-3 pr-2 pl-5 font-medium">
@@ -81,14 +81,14 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
                     </span>
                   </td>
                   <td className="px-2 py-3 font-medium">
-                    <span className="block truncate">{b.customer_name}</span>
-                    <span className="block truncate text-caption text-ink-muted" title={b.customer_email}>
-                      {b.customer_email}
+                    <span className="block truncate">{b.customerName}</span>
+                    <span className="block truncate text-caption text-ink-muted" title={b.customerEmail}>
+                      {b.customerEmail}
                     </span>
                   </td>
-                  <td className="px-2 py-3">{b.service_name}</td>
+                  <td className="px-2 py-3">{b.serviceName}</td>
                   <td className="px-2 py-3">{barberName}</td>
-                  <td className="px-2 py-3 text-right font-medium tabular-nums">{formatNaira(b.price_kobo)}</td>
+                  <td className="px-2 py-3 text-right font-medium tabular-nums">{formatNaira(b.priceKobo)}</td>
                   <td className="px-2 py-3">
                     <BookingStatusBadge status={b.status} />
                   </td>
@@ -96,12 +96,12 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
                     {b.cancellable && (
                       <CancelBookingButton
                         bookingId={b.id}
-                        customerName={b.customer_name}
-                        serviceName={b.service_name}
+                        customerName={b.customerName}
+                        serviceName={b.serviceName}
                         barberName={barberName}
                         day={day}
                         time={time}
-                        amount={formatNaira(b.price_kobo)}
+                        amount={formatNaira(b.priceKobo)}
                       />
                     )}
                   </td>

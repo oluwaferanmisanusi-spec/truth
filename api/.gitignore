@@ -1,0 +1,8 @@
+# Installed packages, build output and local settings stay out of git.
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.env*
+# The settings template is safe to commit (names only, no values).
+!.env.example

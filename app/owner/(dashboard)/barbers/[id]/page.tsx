@@ -42,7 +42,7 @@ async function Barber({ params }: { params: PageProps<"/owner/barbers/[id]">["pa
 
   return (
     <>
-      <PageHeader title={barber.full_name ?? "Invite pending"} description={`${barber.email} · ${upcomingText}`} />
+      <PageHeader title={barber.fullName ?? "Invite pending"} description={`${barber.email} · ${upcomingText}`} />
       <div className="flex items-start gap-6">
         <BarberForm id={barber.id} firstName={barber.firstName} services={barber.services} hours={barber.hours} />
         <BarberStatusCard

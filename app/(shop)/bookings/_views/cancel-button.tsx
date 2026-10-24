@@ -5,9 +5,10 @@ import { useState, useTransition } from "react";
 import { Sheet } from "@/components/shop/sheet";
 import { buttonClass } from "@/components/ui";
 
-type Props = { action: () => Promise<void>; refund: boolean; amount: string };
+/** refundWindow: the shop's rule in words, e.g. "24 hours". */
+type Props = { action: () => Promise<void>; refund: boolean; amount: string; refundWindow: string };
 
-export function CancelButton({ action, refund, amount }: Props) {
+export function CancelButton({ action, refund, amount, refundWindow }: Props) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   return (
@@ -32,8 +33,8 @@ export function CancelButton({ action, refund, amount }: Props) {
         }
       >
         {refund
-          ? `You’re cancelling more than 24 hours before your appointment, so you’ll get a full refund of ${amount} to the card you paid with.`
-          : `Your appointment is in less than 24 hours, so the ${amount} you paid won’t be refunded. This can’t be undone.`}
+          ? `You’re cancelling more than ${refundWindow} before your appointment, so you’ll get a full refund of ${amount} to the card you paid with.`
+          : `Your appointment is in less than ${refundWindow}, so the ${amount} you paid won’t be refunded. This can’t be undone.`}
       </Sheet>
     </>
   );

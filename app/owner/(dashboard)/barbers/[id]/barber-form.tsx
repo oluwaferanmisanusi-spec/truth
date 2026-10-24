@@ -12,7 +12,7 @@ import { saveBarber } from "../actions";
 export function BarberForm({ id, firstName, services, hours }: {
   id: string;
   firstName: string;
-  services: { id: string; name: string; is_active: boolean; offered: boolean }[];
+  services: { id: string; name: string; isActive: boolean; offered: boolean }[];
   hours: HoursDay[];
 }) {
   const [state, action, pending] = useActionState(saveBarber, undefined);
@@ -40,7 +40,7 @@ export function BarberForm({ id, firstName, services, hours }: {
           {services.map((s) => (
             <Checkbox key={s.id} name="service" value={s.id} defaultChecked={s.offered}>
               {s.name}
-              {!s.is_active && <span className="text-small text-ink-muted"> (inactive service)</span>}
+              {!s.isActive && <span className="text-small text-ink-muted"> (inactive service)</span>}
             </Checkbox>
           ))}
         </div>

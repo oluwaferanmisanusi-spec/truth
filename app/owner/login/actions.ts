@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAccount } from "@/lib/auth/customer";
 
 export type LoginState = { error?: string; email?: string } | undefined;
 
@@ -21,13 +22,7 @@ export async function logIn(_prev: LoginState, formData: FormData): Promise<Logi
   if (error || !data.user) return { error: WRONG_DETAILS, email };
 
   // A customer or barber with valid details still can't use the owner screens.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", data.user.id)
-    .single();
-
-  if (profile?.role !== "owner") {
+  if ((await getAccount())?.role !== "owner") {
     await supabase.auth.signOut();
     return { error: WRONG_DETAILS, email };
   }

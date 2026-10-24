@@ -62,14 +62,14 @@ async function ServicesTable() {
                 <span className="block">{s.name}</span>
                 {s.description && <span className="block text-caption text-ink-muted">{s.description}</span>}
               </th>
-              <td className="px-2 py-3">{s.duration_minutes} min</td>
-              <td className="px-2 py-3 text-ink-muted">{s.buffer_minutes ? `${s.buffer_minutes} min` : "None"}</td>
-              <td className="px-2 py-3 text-right font-medium tabular-nums">{formatNaira(s.price_kobo)}</td>
+              <td className="px-2 py-3">{s.durationMinutes} min</td>
+              <td className="px-2 py-3 text-ink-muted">{s.bufferMinutes ? `${s.bufferMinutes} min` : "None"}</td>
+              <td className="px-2 py-3 text-right font-medium tabular-nums">{formatNaira(s.priceKobo)}</td>
               <td className="px-2 py-3">
                 {s.offeredBy.length ? s.offeredBy.join(", ") : <span className="text-ink-muted">No barber yet</span>}
               </td>
               <td className="px-2 py-3">
-                <RecordStatusBadge status={s.is_active ? "active" : "inactive"} />
+                <RecordStatusBadge status={s.isActive ? "active" : "inactive"} />
               </td>
               <td className="py-3 pr-5 pl-2 text-right">
                 <Link href={`/owner/services/${s.id}`} className={buttonClass.ghost} aria-label={`Edit ${s.name}`}>

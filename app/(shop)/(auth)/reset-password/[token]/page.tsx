@@ -5,7 +5,7 @@ import { Clock } from "lucide-react";
 import { BrandBar } from "@/components/shop/bars";
 import { StatusHero } from "@/components/shop/status-hero";
 import { buttonClass } from "@/components/ui";
-import { readToken } from "@/lib/auth/tokens";
+import { api, ApiError } from "@/lib/api/client";
 import { NewPasswordForm } from "../../forms";
 import { Intro } from "../../intro";
 
@@ -26,8 +26,12 @@ export default function ResetPasswordPage({ params }: Props) {
 
 async function Reset({ params }: Pick<Props, "params">) {
   const { token } = await params;
-  const found = await readToken(token, "reset_password");
-  if (found.state !== "valid") {
+  const { valid } = await api<{ valid: boolean }>(`/password-resets/${encodeURIComponent(token)}`).catch((error) => {
+    // A malformed link is just another link that doesn't work.
+    if (error instanceof ApiError && error.status === 400) return { valid: false };
+    throw error;
+  });
+  if (!valid) {
     return (
       <>
         <div className="pt-4">

@@ -1,12 +1,12 @@
-// Creates (or updates) the shop owner's login from OWNER_EMAIL / OWNER_PASSWORD in .env.local.
+// Creates (or updates) the shop owner's login from OWNER_EMAIL / OWNER_PASSWORD in api/.env.
 // Run with: npm run create-owner
 import { createClient } from "@supabase/supabase-js";
 
-const { NEXT_PUBLIC_SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: serviceKey, OWNER_EMAIL: email, OWNER_PASSWORD: password } =
+const { SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: serviceKey, OWNER_EMAIL: email, OWNER_PASSWORD: password } =
   process.env;
 
 if (!url || !serviceKey || !email || !password) {
-  console.error("Missing NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OWNER_EMAIL or OWNER_PASSWORD in .env.local");
+  console.error("Missing SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OWNER_EMAIL or OWNER_PASSWORD in api/.env");
   process.exit(1);
 }
 

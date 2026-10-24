@@ -1,21 +1,12 @@
-// The authoritative "is this the shop owner?" check for server code.
+// The "is this the shop owner?" check for owner pages. The API checks again on every
+// /owner call, so this only decides what to show.
 import "server-only";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getAccount } from "@/lib/auth/customer";
 
 export async function getOwner() {
-  const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  const userId = claims?.claims.sub;
-  if (!userId) return null;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, role")
-    .eq("id", userId)
-    .single();
-
-  return profile?.role === "owner" ? profile : null;
+  const account = await getAccount();
+  return account?.role === "owner" ? account : null;
 }
 
 export async function requireOwner() {

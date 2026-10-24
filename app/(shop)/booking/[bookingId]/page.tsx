@@ -3,7 +3,6 @@
 // refund note when a late payment couldn't be kept.
 import { Suspense } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { CircleAlert, CircleCheck, Clock, type LucideIcon } from "lucide-react";
 import { BrandBar, BottomBar, StepBar } from "@/components/shop/bars";
 import { Stepper } from "@/components/shop/stepper";
@@ -11,13 +10,15 @@ import { BookingSummary } from "@/components/shop/booking-summary";
 import { StatusHero } from "@/components/shop/status-hero";
 import { Alert } from "@/components/alert";
 import { buttonClass } from "@/components/ui";
-import { getBooking, type BookingView } from "@/lib/booking/data";
+import type { Hold } from "@api/booking";
+import { apiOrNotFound } from "@/lib/api/client";
 import { formatDay, formatNaira, formatTime, shopToday } from "@/lib/format";
 import { DetailsForm } from "./details-form";
 import { HoldTimer } from "@/components/shop/hold-timer";
 import { releaseHold } from "./actions";
 import { logOut } from "../../(auth)/actions";
 import { getAccount } from "@/lib/auth/customer";
+import { getRuleWords } from "@/lib/rules";
 
 type Props = PageProps<"/booking/[bookingId]">;
 
@@ -31,21 +32,20 @@ export default function BookingPage({ params }: Props) {
 
 async function Booking({ params }: Pick<Props, "params">) {
   const { bookingId } = await params;
-  const booking = await getBooking(bookingId);
-  if (!booking) notFound();
+  const [booking, words] = await Promise.all([apiOrNotFound<Hold>(`/holds/${bookingId}`), getRuleWords()]);
 
   const summary = (
     <BookingSummary
-      serviceName={booking.service_name}
-      durationMinutes={booking.duration_minutes}
+      serviceName={booking.serviceName}
+      durationMinutes={booking.durationMinutes}
       barberName={booking.barberName}
-      startsAt={booking.starts_at}
-      priceKobo={booking.price_kobo}
-      anyBarber={booking.any_barber}
+      startsAt={booking.startsAt}
+      priceKobo={booking.priceKobo}
+      anyBarber={booking.anyBarber}
     />
   );
 
-  if (booking.view === "pay") {
+  if (booking.screen === "pay") {
     const account = await getAccount();
     return (
       <>
@@ -53,10 +53,11 @@ async function Booking({ params }: Pick<Props, "params">) {
         <main className="flex flex-1 flex-col">
           <DetailsForm
             bookingId={booking.id}
-            priceLabel={formatNaira(booking.price_kobo)}
-            defaults={{ name: booking.customer_name, email: booking.customer_email }}
-            account={account && { name: account.full_name, email: account.email }}
+            priceLabel={formatNaira(booking.priceKobo)}
+            defaults={{ name: booking.customerName, email: booking.customerEmail }}
+            account={account && { name: account.fullName, email: account.email }}
             logOut={logOut.bind(null, `/booking/${booking.id}`)}
+            words={words}
             summary={summary}
             progress={
               <div className="flex flex-col gap-3">
@@ -75,29 +76,29 @@ async function Booking({ params }: Pick<Props, "params">) {
     );
   }
 
-  if (booking.view === "confirmed") {
+  if (booking.screen === "confirmed") {
     return (
       <Result
         icon={CircleCheck}
         tone="success"
         title="You’re booked"
-        message={<>We’ve emailed your confirmation to {booking.customer_email}.</>}
-        helper={`${formatDay(booking.starts_at)} at ${formatTime(booking.starts_at)}`}
+        message={<>We’ve emailed your confirmation to {booking.customerEmail}.</>}
+        helper={`${formatDay(booking.startsAt)} at ${formatTime(booking.startsAt)}`}
         action={{ label: "Back to home", href: "/" }}
       >
         {summary}
         <Alert variant="info" title="Before your appointment">
-          Arrive within 15 minutes of your start time, or it counts as a no-show. To cancel or reschedule, use the
-          link in your email up to 24 hours before.
+          Arrive within {words.grace} of your start time, or it counts as a no-show. To cancel or reschedule, use the
+          link in your email up to {words.refundWindow} before.
         </Alert>
       </Result>
     );
   }
 
-  const when = `${formatTime(booking.starts_at)} on ${formatDay(booking.starts_at)}`;
+  const when = `${formatTime(booking.startsAt)} on ${formatDay(booking.startsAt)}`;
   const chooseTime = { label: "Choose a time", href: timeUrl(booking) };
 
-  if (booking.view === "failed") {
+  if (booking.screen === "failed") {
     return (
       <Result
         icon={CircleAlert}
@@ -113,7 +114,7 @@ async function Booking({ params }: Pick<Props, "params">) {
     );
   }
 
-  if (booking.view === "refunded") {
+  if (booking.screen === "refunded") {
     return (
       <Result
         icon={CircleAlert}
@@ -122,7 +123,7 @@ async function Booking({ params }: Pick<Props, "params">) {
         message={
           <>
             Your payment came through after we’d stopped holding {when}, and someone else booked that time. We’ve
-            refunded the full {formatNaira(booking.price_kobo)} and emailed you the details.
+            refunded the full {formatNaira(booking.priceKobo)} and emailed you the details.
           </>
         }
         action={chooseTime}
@@ -130,7 +131,7 @@ async function Booking({ params }: Pick<Props, "params">) {
     );
   }
 
-  if (booking.view === "cancelled") {
+  if (booking.screen === "cancelled") {
     return (
       <Result icon={CircleAlert} tone="warning" title="This booking was cancelled" message={<>Your {when} booking was cancelled.</>} action={{ label: "Back to home", href: "/" }}>
         {summary}
@@ -143,15 +144,15 @@ async function Booking({ params }: Pick<Props, "params">) {
       icon={Clock}
       tone="warning"
       title="Your hold ran out"
-      message={<>We held {when} for 10 minutes, then released it so others could book. If it’s still free, you can pick it again.</>}
+      message={<>We held {when} for {words.hold}, then released it so others could book. If it’s still free, you can pick it again.</>}
       action={chooseTime}
     />
   );
 }
 
-function timeUrl(booking: BookingView) {
-  const barber = booking.any_barber ? "any" : booking.barber_id;
-  return `/book/${booking.service_id}/time?barber=${barber}&date=${shopToday(new Date(booking.starts_at))}`;
+function timeUrl(booking: Hold) {
+  const barber = booking.anyBarber ? "any" : booking.barberId;
+  return `/book/${booking.serviceId}/time?barber=${barber}&date=${shopToday(new Date(booking.startsAt))}`;
 }
 
 function Result({ icon, tone, title, message, helper, action, children }: {

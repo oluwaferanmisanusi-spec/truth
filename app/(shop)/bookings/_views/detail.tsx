@@ -8,6 +8,7 @@ import { Alert } from "@/components/alert";
 import { buttonClass } from "@/components/ui";
 import { accessKey, type Access, type Managed } from "@/lib/booking/manage";
 import { formatDay, formatNaira, formatTime } from "@/lib/format";
+import { getRuleWords } from "@/lib/rules";
 import { cancelBooking } from "../actions";
 import { CancelButton } from "./cancel-button";
 import { WithBooking } from "./shared";
@@ -16,12 +17,13 @@ export function BookingDetail({ access }: { access: Promise<Access> }) {
   return <WithBooking access={access}>{(m) => <Detail m={m} />}</WithBooking>;
 }
 
-function Detail({ m }: { m: Managed }) {
+async function Detail({ m }: { m: Managed }) {
   const { booking: b } = m;
+  const words = await getRuleWords();
   const guest = m.access.kind === "guest";
-  const price = formatNaira(b.price_kobo);
+  const price = formatNaira(b.priceKobo);
   const bookAgain = (
-    <Link href={`/book/${b.service_id}`} className={`${buttonClass.primary} w-full`}>
+    <Link href={`/book/${b.serviceId}`} className={`${buttonClass.primary} w-full`}>
       Book again
     </Link>
   );
@@ -41,34 +43,34 @@ function Detail({ m }: { m: Managed }) {
         )}
         <div className="flex flex-col items-start gap-2">
           <BookingStatusBadge status={b.status} />
-          {guest ? <h2 className="text-h2">{b.service_name}</h2> : <h1 className="text-h1">{b.service_name}</h1>}
+          {guest ? <h2 className="text-h2">{b.serviceName}</h2> : <h1 className="text-h1">{b.serviceName}</h1>}
         </div>
         <BookingSummary
-          serviceName={b.service_name}
-          durationMinutes={b.duration_minutes}
+          serviceName={b.serviceName}
+          durationMinutes={b.durationMinutes}
           barberName={b.barberName}
-          startsAt={b.starts_at}
-          priceKobo={b.price_kobo}
+          startsAt={b.startsAt}
+          priceKobo={b.priceKobo}
         />
 
         {b.phase === "free" && (
           <>
             <Alert variant="info" title={`Free cancellation until ${formatDay(b.freeUntil)}, ${formatTime(b.freeUntil)}`}>
               Until then you can cancel for a full refund or move to another time. After that, there’s no refund and
-              you can’t reschedule. If you’re more than 15 minutes late, it counts as a no-show and isn’t refunded.
+              you can’t reschedule. If you’re more than {words.grace} late, it counts as a no-show and isn’t refunded.
             </Alert>
             <div className="flex flex-col gap-2">
               <Link href={`${m.base}/reschedule`} className={`${buttonClass.secondary} w-full`}>
                 Reschedule
               </Link>
-              <CancelButton action={cancelBooking.bind(null, accessKey(m.access))} refund amount={price} />
+              <CancelButton action={cancelBooking.bind(null, accessKey(m.access))} refund amount={price} refundWindow={words.refundWindow} />
             </div>
           </>
         )}
 
         {b.phase === "late" && (
           <>
-            <Alert variant="warning" title="Less than 24 hours to go">
+            <Alert variant="warning" title={`Less than ${words.refundWindow} to go`}>
               You can’t reschedule now. If you cancel, the {price} you paid won’t be refunded. If you’re more than 15
               minutes late, it counts as a no-show.
             </Alert>
@@ -76,20 +78,20 @@ function Detail({ m }: { m: Managed }) {
               <button type="button" className={`${buttonClass.secondary} w-full`} disabled>
                 Reschedule
               </button>
-              <CancelButton action={cancelBooking.bind(null, accessKey(m.access))} refund={false} amount={price} />
+              <CancelButton action={cancelBooking.bind(null, accessKey(m.access))} refund={false} amount={price} refundWindow={words.refundWindow} />
             </div>
           </>
         )}
 
-        {b.phase === "cancelled" && b.cancelled_at && (
+        {b.phase === "cancelled" && b.cancelledAt && (
           <>
             {/* refund_due is what they're owed; a refund Paystack refused is the shop's to sort out. */}
-            <Alert variant="info" title={b.refund_due ? `Refunded ${formatNaira(b.refund?.amount_kobo ?? b.price_kobo)}` : "No refund"}>
-              {b.cancelled_by === "owner"
-                ? `Truth cancelled this booking on ${formatDay(b.cancelled_at)} and refunded you in full. The refund goes to the card you paid with.`
-                : b.refund_due
-                  ? `You cancelled on ${formatDay(b.cancelled_at)}, more than 24 hours before your appointment. The refund goes to the card you paid with.`
-                  : `You cancelled on ${formatDay(b.cancelled_at)}, less than 24 hours before your appointment, so this booking wasn’t refunded.`}
+            <Alert variant="info" title={b.refundDue ? `Refunded ${formatNaira(b.refund?.amountKobo ?? b.priceKobo)}` : "No refund"}>
+              {b.cancelledBy === "owner"
+                ? `Truth cancelled this booking on ${formatDay(b.cancelledAt)} and refunded you in full. The refund goes to the card you paid with.`
+                : b.refundDue
+                  ? `You cancelled on ${formatDay(b.cancelledAt)}, more than ${words.refundWindow} before your appointment. The refund goes to the card you paid with.`
+                  : `You cancelled on ${formatDay(b.cancelledAt)}, less than ${words.refundWindow} before your appointment, so this booking wasn’t refunded.`}
             </Alert>
             {bookAgain}
           </>
@@ -98,7 +100,7 @@ function Detail({ m }: { m: Managed }) {
         {b.phase === "no_show" && (
           <>
             <Alert variant="warning" title="Marked as a no-show">
-              You didn’t arrive within 15 minutes of your start time, so your barber marked a no-show and this booking
+              You didn’t arrive within {words.grace} of your start time, so your barber marked a no-show and this booking
               wasn’t refunded.
             </Alert>
             {bookAgain}

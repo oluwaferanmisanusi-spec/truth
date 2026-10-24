@@ -1,32 +1,22 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { siteUrl } from "@/lib/invites";
+import { api, ApiError } from "@/lib/api/client";
 
 export type ResetRequestState = { error?: string; sentTo?: string; email?: string } | undefined;
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** Figma 5.0b → 5.0c. The reply is the same whether or not the email has an owner account. */
+/**
+ * Figma 5.0b → 5.0c. The API emails a link only if this is the owner's account, and the
+ * reply is the same either way, so the screen never reveals whether an account exists.
+ */
 export async function requestPasswordReset(_prev: ResetRequestState, formData: FormData): Promise<ResetRequestState> {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const email = String(formData.get("email") ?? "").trim();
   if (!email) return { error: "Enter your email address.", email };
-  if (!EMAIL.test(email)) return { error: "Enter an email address like name@example.com.", email };
-
-  // Only the owner resets their password here; customers and barbers have their own screens.
-  const admin = createAdminClient();
-  const { data: profile } = await admin.from("profiles").select("role").eq("email", email).maybeSingle();
-
-  if (profile?.role === "owner") {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: siteUrl("/auth/confirm?next=/owner/reset-password"),
-    });
-    // Rate limits and delivery problems are logged, not shown, so the screen never reveals
-    // whether an account exists.
-    if (error) console.error("resetPasswordForEmail failed", error.message);
+  try {
+    return await api<{ sentTo: string }>("/password-resets", { method: "POST", body: { email, area: "owner" } });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 400) {
+      return { error: "Enter an email address like name@example.com.", email };
+    }
+    throw error;
   }
-
-  return { sentTo: email };
 }

@@ -1,11 +1,12 @@
 // Confirming payment (Figma 2.9). Paystack sends the customer here after checkout.
 import { Suspense } from "react";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import { BrandBar } from "@/components/shop/bars";
 import { BookingSummary } from "@/components/shop/booking-summary";
 import { StatusHero } from "@/components/shop/status-hero";
-import { getBooking } from "@/lib/booking/data";
+import type { Hold } from "@api/booking";
+import { apiOrNotFound } from "@/lib/api/client";
 import { PaymentPoller } from "./payment-poller";
 
 type Props = PageProps<"/booking/[bookingId]/confirming">;
@@ -25,10 +26,9 @@ export default function ConfirmingPage({ params }: Props) {
 
 async function Confirming({ params }: Pick<Props, "params">) {
   const { bookingId } = await params;
-  const booking = await getBooking(bookingId);
-  if (!booking) notFound();
+  const booking = await apiOrNotFound<Hold>(`/holds/${bookingId}`);
   // Nothing to wait for: no payment started, or the result is already recorded.
-  if (booking.payment?.status !== "pending") redirect(`/booking/${booking.id}`);
+  if (booking.paymentStatus !== "pending") redirect(`/booking/${booking.id}`);
 
   return (
     <>
@@ -36,11 +36,11 @@ async function Confirming({ params }: Pick<Props, "params">) {
         This usually takes a few seconds. You can close this page. We’ll email you as soon as your booking is confirmed.
       </StatusHero>
       <BookingSummary
-        serviceName={booking.service_name}
-        durationMinutes={booking.duration_minutes}
+        serviceName={booking.serviceName}
+        durationMinutes={booking.durationMinutes}
         barberName={booking.barberName}
-        startsAt={booking.starts_at}
-        priceKobo={booking.price_kobo}
+        startsAt={booking.startsAt}
+        priceKobo={booking.priceKobo}
       />
       <PaymentPoller bookingId={booking.id} />
     </>

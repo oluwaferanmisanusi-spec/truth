@@ -21,9 +21,11 @@ type Props = {
   /** Logged in: show their details instead of the form. */
   account: { name: string; email: string } | null;
   logOut: () => Promise<void>;
+  /** The shop's rules in words, e.g. { refundWindow: "24 hours", grace: "15 minutes" }. */
+  words: { refundWindow: string; grace: string };
 };
 
-export function DetailsForm({ bookingId, priceLabel, progress, summary, defaults, account, logOut }: Props) {
+export function DetailsForm({ bookingId, priceLabel, progress, summary, defaults, account, logOut, words }: Props) {
   const [state, action, pending] = useActionState<DetailsState | undefined, FormData>(
     startPayment.bind(null, bookingId),
     undefined,
@@ -98,8 +100,8 @@ export function DetailsForm({ bookingId, priceLabel, progress, summary, defaults
           )}
         </section>
         <Alert variant="info" title="Cancellations and late arrival">
-          Cancel or reschedule at least 24 hours before your appointment for a full refund. After that, there’s no
-          refund. If you’re more than 15 minutes late, it counts as a no-show and isn’t refunded.
+          Cancel or reschedule at least {words.refundWindow} before your appointment for a full refund. After that,
+          there’s no refund. If you’re more than {words.grace} late, it counts as a no-show and isn’t refunded.
         </Alert>
       </div>
       <div className="mt-auto">

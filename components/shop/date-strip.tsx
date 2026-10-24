@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { buttonClass } from "@/components/ui";
-import type { Slot, WeekDay } from "@/lib/booking/data";
+import type { Slot, WeekDay } from "@api/booking";
 import { formatDay } from "@/lib/format";
 
 const utcDate = (iso: string) => new Date(`${iso}T00:00:00Z`);
@@ -103,11 +103,13 @@ export function DateStrip(p: {
   );
 }
 
-export function NoTimes({ day, isToday, next, dayHref, noneText = "There are no free times in the next 4 weeks. Try another barber." }: {
+export function NoTimes({ day, isToday, next, dayHref, words, noneText }: {
   day: WeekDay;
   isToday: boolean;
   next: string | null;
   dayHref: (date: string) => string;
+  /** The shop's rules in words, e.g. { bookingWindow: "4 weeks", minNotice: "24 hours" }. */
+  words: { bookingWindow: string; minNotice: string };
   /** Shown when nothing is free in the whole booking window. */
   noneText?: string;
 }) {
@@ -120,8 +122,8 @@ export function NoTimes({ day, isToday, next, dayHref, noneText = "There are no 
         <CalendarDays aria-hidden size={24} />
       </span>
       <h2 className="text-h2">{title}</h2>
-      {day.state === "later" && <p className="text-ink-muted">You can book up to 4 weeks ahead.</p>}
-      {isToday && <p className="text-ink-muted">Online booking closes 24 hours before. Walk‑ins are welcome today.</p>}
+      {day.state === "later" && <p className="text-ink-muted">You can book up to {words.bookingWindow} ahead.</p>}
+      {isToday && <p className="text-ink-muted">Online booking closes {words.minNotice} before. Walk‑ins are welcome today.</p>}
       {next ? (
         <>
           <p className="text-ink-muted">The next free times are on {fmt(next, { weekday: "long", day: "numeric", month: "long" })}.</p>
@@ -130,7 +132,7 @@ export function NoTimes({ day, isToday, next, dayHref, noneText = "There are no 
           </Link>
         </>
       ) : (
-        <p className="text-ink-muted">{noneText}</p>
+        <p className="text-ink-muted">{noneText ?? `There are no free times in the next ${words.bookingWindow}. Try another barber.`}</p>
       )}
     </div>
   );

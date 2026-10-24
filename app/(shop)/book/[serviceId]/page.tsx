@@ -1,12 +1,13 @@
 // Choose a barber (Figma 2.2): "any available" or a named barber with their next free time.
 import { Suspense } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { ChevronRight, UsersRound } from "lucide-react";
 import { StepBar } from "@/components/shop/bars";
 import { Stepper } from "@/components/shop/stepper";
-import { getServiceWithBarbers } from "@/lib/booking/data";
+import type { ServiceWithBarbers } from "@api/booking";
+import { apiOrNotFound } from "@/lib/api/client";
 import { formatDay, formatNaira, formatTime } from "@/lib/format";
+import { getRuleWords } from "@/lib/rules";
 
 export default function ChooseBarberPage({ params }: PageProps<"/book/[serviceId]">) {
   return (
@@ -23,13 +24,15 @@ export default function ChooseBarberPage({ params }: PageProps<"/book/[serviceId
 
 async function Barbers({ params }: Pick<PageProps<"/book/[serviceId]">, "params">) {
   const { serviceId } = await params;
-  const service = await getServiceWithBarbers(serviceId);
-  if (!service) notFound();
+  const [service, words] = await Promise.all([
+    apiOrNotFound<ServiceWithBarbers>(`/services/${serviceId}`),
+    getRuleWords(),
+  ]);
 
   const timeUrl = (barber: string) => `/book/${service.id}/time?barber=${barber}`;
   return (
     <>
-      <Stepper step={2} context={`${service.name} · ${service.duration_minutes} min · ${formatNaira(service.price_kobo)}`} />
+      <Stepper step={2} context={`${service.name} · ${service.durationMinutes} min · ${formatNaira(service.priceKobo)}`} />
       <ul className="flex flex-col gap-3">
         <li>
           <BarberCard
@@ -48,7 +51,7 @@ async function Barbers({ params }: Pick<PageProps<"/book/[serviceId]">, "params"
               subtitle={
                 barber.nextFree
                   ? `Next free ${formatDay(barber.nextFree)}, ${formatTime(barber.nextFree)}`
-                  : "No free times in the next 4 weeks"
+                  : `No free times in the next ${words.bookingWindow}`
               }
             />
           </li>

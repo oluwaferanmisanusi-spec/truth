@@ -1,8 +1,8 @@
-// Data for the owner Stats screen (Figma 5.4). Calls owner_stats() through the owner's own
-// session, so row-level security still applies.
+// Data for the owner Stats screen (Figma 5.4), from the API's /owner/stats.
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
-import { addDays, isIsoDate, shopDayStart, shopToday } from "@/lib/format";
+import type { Stats } from "@api/owner";
+import { api } from "@/lib/api/client";
+import { addDays, isIsoDate, shopToday } from "@/lib/format";
 
 export type StatsRange = { from: string; to: string };
 
@@ -22,41 +22,5 @@ export function parseStatsRange(params: Record<string, string | string[] | undef
 }
 
 export async function getStats({ from, to }: StatsRange) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("owner_stats", {
-    p_from: shopDayStart(from),
-    p_to: shopDayStart(addDays(to, 1)),
-  });
-  if (error) throw error;
-  const rows = data ?? [];
-
-  const barbers = rows.map((b) => {
-    const appointments = b.completed + b.no_shows;
-    return {
-      id: b.barber_id,
-      name: b.full_name,
-      appointments,
-      completed: b.completed,
-      noShows: b.no_shows,
-      noShowRate: appointments ? b.no_shows / appointments : null,
-      revenueKobo: b.paid_kobo - b.refunded_kobo,
-    };
-  });
-
-  const sum = (pick: (b: (typeof rows)[number]) => number) => rows.reduce((n, b) => n + pick(b), 0);
-  const completed = sum((b) => b.completed);
-  const noShows = sum((b) => b.no_shows);
-  const appointments = completed + noShows;
-
-  return {
-    revenueKobo: sum((b) => b.paid_kobo) - sum((b) => b.refunded_kobo),
-    refundsKobo: sum((b) => b.refunded_kobo),
-    bookings: sum((b) => b.bookings),
-    cancelled: sum((b) => b.cancelled),
-    noShows,
-    appointments,
-    noShowRate: appointments ? noShows / appointments : null,
-    // The table lists barbers who had appointments; one with only cancellations still shows.
-    barbers,
-  };
+  return api<Stats>(`/owner/stats?${new URLSearchParams({ from, to })}`);
 }

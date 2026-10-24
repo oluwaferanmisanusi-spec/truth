@@ -4,8 +4,10 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { ChevronRight, Clock, MapPin } from "lucide-react";
 import { BrandBar } from "@/components/shop/bars";
-import { getShopInfo, listServicesForCustomers } from "@/lib/booking/data";
+import type { ServiceSummary, ShopInfo } from "@api/shop";
+import { api } from "@/lib/api/client";
 import { formatNaira } from "@/lib/format";
+import { hoursText } from "@/lib/rules";
 
 export default function Home() {
   return (
@@ -21,7 +23,7 @@ export default function Home() {
 }
 
 async function ShopAndServices() {
-  const [shop, services] = await Promise.all([getShopInfo(), listServicesForCustomers()]);
+  const [shop, services] = await Promise.all([api<ShopInfo>("/shop"), api<ServiceSummary[]>("/services")]);
   return (
     <>
       <div className="flex flex-col gap-2">
@@ -39,7 +41,7 @@ async function ShopAndServices() {
       <section aria-labelledby="services-heading" className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
           <h2 id="services-heading" className="text-h2">Services</h2>
-          <p className="text-small text-ink-muted">Pay in full when you book. Cancel up to 24 hours before for a full refund.</p>
+          <p className="text-small text-ink-muted">Pay in full when you book. Cancel up to {hoursText(shop.rules.refundWindowHours)} before for a full refund.</p>
         </div>
         <ul className="flex flex-col gap-3">
           {services.map((service) => (
@@ -53,7 +55,7 @@ async function ShopAndServices() {
   );
 }
 
-type Service = Awaited<ReturnType<typeof listServicesForCustomers>>[number];
+type Service = ServiceSummary;
 
 function ServiceCard({ service }: { service: Service }) {
   return (
@@ -64,12 +66,12 @@ function ServiceCard({ service }: { service: Service }) {
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-baseline justify-between gap-2">
           <h3 className="text-h3 font-semibold">{service.name}</h3>
-          <span className="font-semibold">{formatNaira(service.price_kobo)}</span>
+          <span className="font-semibold">{formatNaira(service.priceKobo)}</span>
         </div>
         {service.description && <p className="text-small text-ink-muted">{service.description}</p>}
         <p className="flex items-center gap-1 pt-1 text-small text-ink-muted">
           <Clock aria-hidden size={16} className="shrink-0" />
-          <span className="font-medium">{service.duration_minutes} min</span>
+          <span className="font-medium">{service.durationMinutes} min</span>
           <span aria-hidden>·</span>
           <span>{service.barberNames.join(", ")}</span>
         </p>
@@ -89,14 +91,14 @@ function UnavailableServiceCard({ service }: { service: Service }) {
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-baseline justify-between gap-2">
           <h3 className="text-h3 font-semibold">{service.name}</h3>
-          <span className="font-semibold">{formatNaira(service.price_kobo)}</span>
+          <span className="font-semibold">{formatNaira(service.priceKobo)}</span>
         </div>
         {service.description && <p className="text-small">{service.description}</p>}
         <p className="flex items-center gap-2 pt-1 text-small">
           <span className="rounded-full border border-ink-muted bg-surface px-2 text-caption font-medium tracking-normal">
             Not available right now
           </span>
-          <span>{service.duration_minutes} min</span>
+          <span>{service.durationMinutes} min</span>
         </p>
       </div>
     </div>

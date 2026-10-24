@@ -1,0 +1,117 @@
+// Shapes the owner endpoints (/owner/…) send back, shared with the website.
+
+export type BookingStatus =
+  | 'pending_payment'
+  | 'expired'
+  | 'confirmed'
+  | 'completed'
+  | 'no_show'
+  | 'cancelled';
+
+/** GET /owner/bookings (Figma 5.1) */
+export type OwnerBooking = {
+  id: string;
+  reference: string;
+  startsAt: string;
+  customerName: string;
+  customerEmail: string;
+  serviceName: string;
+  priceKobo: number;
+  status: BookingStatus;
+  barberName: string;
+  /** Confirmed and not started yet. */
+  cancellable: boolean;
+};
+
+export type Option = { value: string; label: string };
+
+/** GET /owner/booking-filters */
+export type BookingFilterOptions = { barbers: Option[]; services: Option[] };
+
+/** GET /owner/stats (Figma 5.4) */
+export type Stats = {
+  revenueKobo: number;
+  refundsKobo: number;
+  bookings: number;
+  cancelled: number;
+  noShows: number;
+  appointments: number;
+  noShowRate: number | null;
+  barbers: {
+    id: string;
+    name: string;
+    appointments: number;
+    completed: number;
+    noShows: number;
+    noShowRate: number | null;
+    revenueKobo: number;
+  }[];
+};
+
+/** GET /owner/services, GET /owner/services/:id (Figma 5.5–5.7) */
+export type OwnerService = {
+  id: string;
+  name: string;
+  description: string;
+  durationMinutes: number;
+  bufferMinutes: number;
+  priceKobo: number;
+  isActive: boolean;
+  /** First names of active barbers who offer it. */
+  offeredBy: string[];
+};
+
+export type OwnerServiceDetail = OwnerService & { upcomingBookings: number };
+
+export type BarberStatus = 'invited' | 'active' | 'inactive';
+
+/** One day of weekly hours, Monday first; times as "HH:MM". */
+export type DayHours = {
+  weekday: number;
+  name: string;
+  isOpen: boolean;
+  startsAt: string;
+  endsAt: string;
+};
+
+/** GET /owner/barbers (Figma 5.8) */
+export type OwnerBarbers = {
+  activeServiceCount: number;
+  barbers: {
+    id: string;
+    fullName: string | null;
+    email: string;
+    status: BarberStatus;
+    initials: string;
+    servicesOffered: number;
+    upcoming: number;
+  }[];
+};
+
+/** GET /owner/barbers/:id (Figma 5.10, 5.11) */
+export type OwnerBarberDetail = {
+  id: string;
+  fullName: string | null;
+  firstName: string;
+  email: string;
+  status: BarberStatus;
+  /** Active services, plus inactive ones this barber still has ticked. */
+  services: { id: string; name: string; isActive: boolean; offered: boolean }[];
+  hours: DayHours[];
+  upcoming: number;
+  lastUpcoming: string | null;
+  inviteExpiresAt: string | null;
+};
+
+/** POST /owner/barber-invites and …/resend-invite: the link to share until Resend sends it. */
+export type Invite = { email: string; link: string; expiresAt: string };
+
+/** GET /owner/settings (Figma 5.12) */
+export type ShopSettings = {
+  timeZone: string;
+  hours: DayHours[];
+  holidays: { id: string; date: string; name: string | null }[];
+};
+
+/** POST /owner/holidays: bookings already on that day aren't touched, so say how many. */
+export type HolidayAdded = { date: string; bookingsThatDay: number };

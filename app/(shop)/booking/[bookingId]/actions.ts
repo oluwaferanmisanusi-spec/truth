@@ -1,103 +1,53 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { getBooking } from "@/lib/booking/data";
-import { settlePayment } from "@/lib/booking/payments";
-import { initializeTransaction } from "@/lib/paystack";
+import type { Hold } from "@api/booking";
+import { api, ApiError } from "@/lib/api/client";
 import { shopToday } from "@/lib/format";
-import { siteUrl } from "@/lib/invites";
-import { getAccount } from "@/lib/auth/customer";
 
 export type DetailsState = {
   errors?: { name?: string; email?: string; form?: string };
   values?: { name: string; email: string };
 };
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// "Pay ₦8,000" (Figma 2.6–2.8): save the customer's details on the hold, then send them
-// to Paystack's checkout. Paystack brings them back to the confirming page. Logged-in
+// "Pay ₦8,000" (Figma 2.6–2.8): the API saves the customer's details on the hold and
+// returns Paystack's checkout, which brings them back to the confirming page. Logged-in
 // customers pay with their account's details and the booking joins their account.
 export async function startPayment(bookingId: string, _prev: DetailsState | undefined, formData: FormData): Promise<DetailsState> {
-  const account = await getAccount();
-  const name = (account?.full_name ?? String(formData.get("name") ?? "")).trim().replace(/\s+/g, " ");
-  const email = (account?.email ?? String(formData.get("email") ?? "")).trim().toLowerCase();
-  const errors: DetailsState["errors"] = {};
-  if (!name) errors.name = "Enter your full name";
-  else if (name.length > 100) errors.name = "Enter a name of 100 characters or fewer";
-  if (!EMAIL.test(email)) errors.email = "Enter an email address like name@example.com";
-  if (errors.name || errors.email) return { errors, values: { name, email } };
-
-  const booking = await getBooking(bookingId);
-  if (!booking || booking.view !== "pay") redirect(`/booking/${bookingId}`);
-
-  const admin = createAdminClient();
-  const { error } = await admin
-    .from("bookings")
-    .update({
-      customer_name: name,
-      customer_email: email,
-      customer_id: account?.id ?? null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", bookingId)
-    .eq("status", "pending_payment");
-  if (error) throw error;
-
-  // Pressing Pay again (e.g. after coming back from Paystack) reuses the same checkout.
-  let checkoutUrl = booking.payment?.authorization_url;
-  if (!checkoutUrl) {
-    try {
-      const returnUrl = siteUrl(`/booking/${bookingId}/confirming`);
-      checkoutUrl = await initializeTransaction({
-        reference: booking.reference,
-        email,
-        amountKobo: booking.price_kobo,
-        callbackUrl: returnUrl,
-        metadata: { booking_id: bookingId, service: booking.service_name },
-      });
-      await admin.from("payments").insert({
-        booking_id: bookingId,
-        reference: booking.reference,
-        amount_kobo: booking.price_kobo,
-        authorization_url: checkoutUrl,
-      });
-    } catch (e) {
-      console.error("Payment not started", e);
-      return {
-        errors: { form: "We couldn’t reach Paystack just now. Your time is still held, so please try again." },
-        values: { name, email },
-      };
-    }
+  const values = { name: String(formData.get("name") ?? ""), email: String(formData.get("email") ?? "") };
+  let checkoutUrl: string;
+  try {
+    ({ checkoutUrl } = await api<{ checkoutUrl: string }>(`/holds/${bookingId}/pay`, { method: "POST", body: values }));
+  } catch (error) {
+    if (!(error instanceof ApiError)) throw error;
+    if (error.status === 400) return { errors: error.fieldErrors, values };
+    if (error.code === "paystack_unreachable") return { errors: { form: error.message }, values };
+    // The hold ran out or was already paid: show whatever screen it's on now.
+    redirect(`/booking/${bookingId}`);
   }
   redirect(checkoutUrl);
 }
 
 // The confirming page (Figma 2.9) calls this every few seconds until Paystack has an answer.
 export async function checkPayment(bookingId: string): Promise<"done" | "waiting"> {
-  const booking = await getBooking(bookingId);
-  if (!booking?.payment || booking.payment.status !== "pending") return "done";
   try {
-    return (await settlePayment(booking.reference)) === "waiting" ? "waiting" : "done";
-  } catch (e) {
-    console.error("Payment check failed", e);
+    const { done } = await api<{ done: boolean }>(`/holds/${bookingId}/check-payment`, { method: "POST" });
+    return done ? "done" : "waiting";
+  } catch (error) {
+    console.error("Payment check failed", error);
     return "waiting";
   }
 }
 
 // Back from Details and payment: let the time go now rather than in 10 minutes.
 export async function releaseHold(bookingId: string) {
-  const booking = await getBooking(bookingId);
-  if (!booking) redirect("/");
-
-  const admin = createAdminClient();
-  await admin
-    .from("bookings")
-    .update({ status: "expired", updated_at: new Date().toISOString() })
-    .eq("id", bookingId)
-    .eq("status", "pending_payment");
-
-  const barber = booking.any_barber ? "any" : booking.barber_id;
-  redirect(`/book/${booking.service_id}/time?barber=${barber}&date=${shopToday(new Date(booking.starts_at))}`);
+  let hold: Hold;
+  try {
+    hold = await api<Hold>(`/holds/${bookingId}/release`, { method: "POST" });
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 404 || error.status === 400)) redirect("/");
+    throw error;
+  }
+  const barber = hold.anyBarber ? "any" : hold.barberId;
+  redirect(`/book/${hold.serviceId}/time?barber=${barber}&date=${shopToday(new Date(hold.startsAt))}`);
 }

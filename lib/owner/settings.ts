@@ -1,9 +1,9 @@
-// Data for the owner Shop settings screen (Figma 5.12).
+// Data for the owner Shop settings screen (Figma 5.12), from the API's /owner/settings.
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
-import { WEEK } from "@/lib/owner/hours";
+import type { ShopSettings } from "@api/owner";
+import { api } from "@/lib/api/client";
 
-/** Only Lagos for now: every screen and email formats times in this zone (lib/format.ts). */
+/** Only Lagos for now: every screen and email formats times in this zone. The API checks it too. */
 export const TIME_ZONES = [{ value: "Africa/Lagos", label: "Africa/Lagos · West Africa Time (UTC+1)" }];
 
 const holidayDate = new Intl.DateTimeFormat("en-GB", {
@@ -20,28 +20,6 @@ export function formatHolidayDate(isoDate: string) {
 }
 
 export async function getShopSettings() {
-  const supabase = await createClient();
-  const [settings, hours, holidays] = await Promise.all([
-    supabase.from("shop_settings").select("time_zone").single(),
-    supabase.from("opening_hours").select("weekday, is_open, opens_at, closes_at"),
-    supabase.from("holidays").select("id, date, name").order("date"),
-  ]);
-  if (settings.error) throw settings.error;
-  if (hours.error) throw hours.error;
-  if (holidays.error) throw holidays.error;
-
-  return {
-    timeZone: settings.data.time_zone,
-    hours: WEEK.map(({ weekday, name }) => {
-      const h = hours.data.find((row) => row.weekday === weekday);
-      return {
-        weekday,
-        name,
-        isOpen: h?.is_open ?? false,
-        startsAt: h?.opens_at?.slice(0, 5) ?? "09:00",
-        endsAt: h?.closes_at?.slice(0, 5) ?? "19:00",
-      };
-    }),
-    holidays: holidays.data.map((h) => ({ ...h, label: formatHolidayDate(h.date) })),
-  };
+  const settings = await api<ShopSettings>("/owner/settings");
+  return { ...settings, holidays: settings.holidays.map((h) => ({ ...h, label: formatHolidayDate(h.date) })) };
 }

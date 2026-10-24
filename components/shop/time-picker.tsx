@@ -7,7 +7,7 @@ import { useFormStatus } from "react-dom";
 import { Check } from "lucide-react";
 import { BottomBar } from "@/components/shop/bars";
 import { buttonClass } from "@/components/ui";
-import type { Slot } from "@/lib/booking/data";
+import type { Slot } from "@api/booking";
 
 type Props = {
   /** Server action that receives startsAt plus the hidden fields. */

@@ -42,3 +42,4 @@ next-env.d.ts
 
 # keep the env template
 !.env.local.example
+!api/.env.example

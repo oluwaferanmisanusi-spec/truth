@@ -40,9 +40,9 @@ async function EditService({ params }: { params: PageProps<"/owner/services/[id]
         initial={{
           name: service.name,
           description: service.description,
-          duration: String(service.duration_minutes),
-          buffer: String(service.buffer_minutes),
-          price: (service.price_kobo / 100).toLocaleString("en-NG"),
+          duration: String(service.durationMinutes),
+          buffer: String(service.bufferMinutes),
+          price: (service.priceKobo / 100).toLocaleString("en-NG"),
         }}
         durationOptions={DURATION_OPTIONS}
         bufferOptions={BUFFER_OPTIONS}
@@ -52,7 +52,7 @@ async function EditService({ params }: { params: PageProps<"/owner/services/[id]
       <ServiceActiveCard
         id={service.id}
         name={service.name}
-        isActive={service.is_active}
+        isActive={service.isActive}
         upcomingBookings={service.upcomingBookings}
       />
     </>

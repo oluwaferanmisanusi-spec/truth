@@ -4,14 +4,16 @@ import { CircleCheck } from "lucide-react";
 import { BookingSummary } from "@/components/shop/booking-summary";
 import { formatDay, formatNaira, formatTime } from "@/lib/format";
 import type { Access } from "@/lib/booking/manage";
+import { getRuleWords } from "@/lib/rules";
 import { homeFor, ResultScreen, WithBooking } from "./shared";
 
 export function BookingCancelled({ access }: { access: Promise<Access> }) {
   return (
     <WithBooking access={access}>
-      {(m) => {
+      {async (m) => {
         const b = m.booking;
         if (b.status !== "cancelled") redirect(m.base);
+        const words = await getRuleWords();
         return (
           <ResultScreen
             icon={CircleCheck}
@@ -19,9 +21,9 @@ export function BookingCancelled({ access }: { access: Promise<Access> }) {
             title="Booking cancelled"
             action={m.access.kind === "account" ? homeFor(m) : { label: "Book an appointment", href: "/" }}
           >
-            {b.refund_due
-              ? `Your ${formatNaira(b.price_kobo)} refund is on its way to the card you paid with. We’ve emailed you a confirmation.`
-              : `Your ${formatDay(b.starts_at)} booking at ${formatTime(b.starts_at)} is cancelled. It was less than 24 hours away, so there’s no refund. We’ve emailed you a confirmation.`}
+            {b.refundDue
+              ? `Your ${formatNaira(b.priceKobo)} refund is on its way to the card you paid with. We’ve emailed you a confirmation.`
+              : `Your ${formatDay(b.startsAt)} booking at ${formatTime(b.startsAt)} is cancelled. It was less than ${words.refundWindow} away, so there’s no refund. We’ve emailed you a confirmation.`}
           </ResultScreen>
         );
       }}
@@ -42,15 +44,15 @@ export function BookingMoved({ access }: { access: Promise<Access> }) {
             action={homeFor(m)}
             extra={
               <BookingSummary
-                serviceName={b.service_name}
-                durationMinutes={b.duration_minutes}
+                serviceName={b.serviceName}
+                durationMinutes={b.durationMinutes}
                 barberName={b.barberName}
-                startsAt={b.starts_at}
-                priceKobo={b.price_kobo}
+                startsAt={b.startsAt}
+                priceKobo={b.priceKobo}
               />
             }
           >
-            You’re now booked for {formatDay(b.starts_at)} at {formatTime(b.starts_at)} with {b.barberName.split(" ")[0]}.
+            You’re now booked for {formatDay(b.startsAt)} at {formatTime(b.startsAt)} with {b.barberName.split(" ")[0]}.
             We’ve emailed you the new details.
           </ResultScreen>
         );
