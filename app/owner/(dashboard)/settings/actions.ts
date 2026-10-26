@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import type { HolidayAdded } from "@api/owner";
 import { api, ApiError } from "@/lib/api/client";
 import { parseWeekHours } from "@/lib/owner/hours";
-import { formatHolidayDate } from "@/lib/owner/settings";
+import { bookingsOnDay, formatHolidayDate } from "@/lib/owner/settings";
 
 export type SettingsState = { error?: string; dayErrors?: Record<number, string>; saved?: boolean } | undefined;
 
@@ -26,7 +26,9 @@ export async function saveShopSettings(_prev: SettingsState, formData: FormData)
   return { saved: true };
 }
 
-export type HolidayResult = { error?: string; title?: string; message?: string } | undefined;
+export type HolidayResult =
+  | { error?: string; title?: string; message?: string; link?: { href: string; text: string } }
+  | undefined;
 
 /** Figma 5.12c Holiday added. */
 export async function addHoliday(_prev: HolidayResult, formData: FormData): Promise<HolidayResult> {
@@ -52,8 +54,9 @@ export async function addHoliday(_prev: HolidayResult, formData: FormData): Prom
   return {
     title: "Holiday added",
     message: count
-      ? `No one can book on ${label}. ${count} existing booking${count === 1 ? " is" : "s are"} still on that day. Cancel ${count === 1 ? "it" : "them"} from Bookings if the shop will be closed.`
+      ? `No one can book on ${label}. ${count} existing booking${count === 1 ? " is" : "s are"} still on that day. Cancel or move ${count === 1 ? "it" : "them"} if the shop will be closed.`
       : `No one can book on ${label}.`,
+    link: count ? { href: bookingsOnDay(added.date), text: count === 1 ? "Show the booking" : `Show the ${count} bookings` } : undefined,
   };
 }
 

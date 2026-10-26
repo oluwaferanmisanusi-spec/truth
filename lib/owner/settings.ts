@@ -19,7 +19,16 @@ export function formatHolidayDate(isoDate: string) {
   return holidayDate.format(new Date(`${isoDate}T00:00:00Z`)).replace(",", "");
 }
 
+/** Bookings → that day's upcoming bookings, ready to cancel or move. */
+export function bookingsOnDay(isoDate: string) {
+  return `/owner/bookings?${new URLSearchParams({ from: isoDate, to: isoDate, status: "confirmed" })}`;
+}
+
 export async function getShopSettings() {
   const settings = await api<ShopSettings>("/owner/settings");
-  return { ...settings, holidays: settings.holidays.map((h) => ({ ...h, label: formatHolidayDate(h.date) })) };
+  return {
+    ...settings,
+    holidays: settings.holidays.map((h) => ({ ...h, label: formatHolidayDate(h.date) })),
+    clashes: settings.clashes.map((c) => ({ ...c, label: formatHolidayDate(c.date), href: bookingsOnDay(c.date) })),
+  };
 }

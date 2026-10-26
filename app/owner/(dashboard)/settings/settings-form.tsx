@@ -3,6 +3,8 @@
 // Figma 5.12 Shop settings: Opening hours + Time zone (saved with "Save changes") and
 // Holidays (added and removed straight away), 5.12b–5.12g states.
 import { useActionState, useState, useTransition } from "react";
+import Link from "next/link";
+import { CircleAlert } from "lucide-react";
 import { Alert } from "@/components/alert";
 import { Dialog } from "@/components/dialog";
 import { SelectFormField, TextField } from "@/components/form-field";
@@ -12,12 +14,17 @@ import { buttonClass } from "@/components/ui";
 import { addHoliday, removeHoliday, saveShopSettings, type HolidayResult } from "./actions";
 
 type Holiday = { id: string; date: string; name: string | null; label: string };
+type Clash = { date: string; reason: "holiday" | "hours"; count: number; label: string; href: string };
 
-export function ShopSettingsForm({ hours, timeZone, timeZones, holidays, today }: {
+const linkClass = "font-medium text-primary underline underline-offset-2 hover:text-primary-hover";
+const bookingsText = (n: number) => (n === 1 ? "1 booking" : `${n} bookings`);
+
+export function ShopSettingsForm({ hours, timeZone, timeZones, holidays, clashes, today }: {
   hours: HoursDay[];
   timeZone: string;
   timeZones: { value: string; label: string }[];
   holidays: Holiday[];
+  clashes: Clash[];
   today: string;
 }) {
   const [state, action, pending] = useActionState(saveShopSettings, undefined);
@@ -32,6 +39,7 @@ export function ShopSettingsForm({ hours, timeZone, timeZones, holidays, today }
       <form id="settings-form" action={action} noValidate className="flex flex-col gap-6">
         <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-6" aria-labelledby="hours-heading">
           <h2 id="hours-heading" className="text-h2 font-semibold">Opening hours</h2>
+          <HoursClashes clashes={clashes.filter((c) => c.reason === "hours")} />
           <HoursEditor initial={hours} dayErrors={state?.dayErrors} switchLabel={(day) => `${day} open`} />
         </section>
 
@@ -42,7 +50,7 @@ export function ShopSettingsForm({ hours, timeZone, timeZones, holidays, today }
         </section>
       </form>
 
-      <HolidaysCard holidays={holidays} today={today} />
+      <HolidaysCard holidays={holidays} clashes={clashes} today={today} />
 
       <div>
         <button type="submit" form="settings-form" className={buttonClass.primary} disabled={pending}>
@@ -53,7 +61,26 @@ export function ShopSettingsForm({ hours, timeZone, timeZones, holidays, today }
   );
 }
 
-function HolidaysCard({ holidays, today }: { holidays: Holiday[]; today: string }) {
+// Bookings the opening hours now rule out (decided 2026-10-26, built from the Alert). They
+// stay booked, so this shows until each is cancelled or moved, or the hours change back.
+function HoursClashes({ clashes }: { clashes: Clash[] }) {
+  if (clashes.length === 0) return null;
+  const total = clashes.reduce((n, c) => n + c.count, 0);
+  return (
+    <Alert variant="warning" title={`${bookingsText(total)} ${total === 1 ? "is" : "are"} outside your opening hours`}>
+      <p>{total === 1 ? "It stays" : "They stay"} booked until you cancel or move {total === 1 ? "it" : "them"}.</p>
+      <ul className="mt-2 flex flex-col gap-1">
+        {clashes.map((c) => (
+          <li key={c.date}>
+            <Link href={c.href} className={linkClass}>{c.label}: {bookingsText(c.count)}</Link>
+          </li>
+        ))}
+      </ul>
+    </Alert>
+  );
+}
+
+function HolidaysCard({ holidays, clashes, today }: { holidays: Holiday[]; clashes: Clash[]; today: string }) {
   const [notice, setNotice] = useState<HolidayResult>();
   const [removing, setRemoving] = useState<Holiday>();
   const [removePending, startRemove] = useTransition();
@@ -82,21 +109,39 @@ function HolidaysCard({ holidays, today }: { holidays: Holiday[]; today: string 
         <p className="text-small text-ink-muted">No one can book on these dates.</p>
       </div>
 
-      {notice?.title && <Alert title={notice.title}>{notice.message}</Alert>}
+      {notice?.title && (
+        <Alert title={notice.title}>
+          {notice.message}
+          {notice.link && <> <Link href={notice.link.href} className={linkClass}>{notice.link.text}</Link></>}
+        </Alert>
+      )}
       {notice?.error && <Alert variant="warning" role="alert">{notice.error}</Alert>}
 
       {holidays.length > 0 ? (
         <ul className="flex flex-col">
-          {holidays.map((h) => (
-            <li key={h.id} className="flex min-h-16 items-center gap-4 border-b border-border text-small">
-              <span className="w-44 shrink-0 font-medium">{h.label}</span>
-              <span className="flex-1">{h.name ?? <span className="text-ink-muted">No name</span>}</span>
-              <button type="button" className={buttonClass.ghost} onClick={() => setRemoving(h)}
-                aria-label={`Remove ${h.name ?? h.label}`}>
-                Remove
-              </button>
-            </li>
-          ))}
+          {holidays.map((h) => {
+            // Still booked on this holiday: shown on its row until those bookings are dealt with.
+            const clash = clashes.find((c) => c.date === h.date);
+            return (
+              <li key={h.id} className="flex min-h-16 items-center gap-4 border-b border-border text-small">
+                <span className="w-44 shrink-0 font-medium">{h.label}</span>
+                <span className="flex flex-1 flex-col gap-1 py-2">
+                  {h.name ?? <span className="text-ink-muted">No name</span>}
+                  {clash && (
+                    <span className="flex items-center gap-1 text-warning">
+                      <CircleAlert aria-hidden size={16} className="shrink-0" />
+                      {bookingsText(clash.count)} still on this day.
+                      <Link href={clash.href} className={linkClass}>Show {clash.count === 1 ? "it" : "them"}</Link>
+                    </span>
+                  )}
+                </span>
+                <button type="button" className={buttonClass.ghost} onClick={() => setRemoving(h)}
+                  aria-label={`Remove ${h.name ?? h.label}`}>
+                  Remove
+                </button>
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="text-small text-ink-muted">No holidays yet.</p>

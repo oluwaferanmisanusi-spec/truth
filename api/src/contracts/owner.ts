@@ -146,6 +146,18 @@ export type ShopSettings = {
   timeZone: string;
   hours: DayHours[];
   holidays: { id: string; date: string; name: string | null }[];
+  clashes: SettingsClash[];
+};
+
+/**
+ * Upcoming bookings on one shop day that the shop's own settings now rule out: the day is
+ * a holiday, or the bookings fall on a closed day or outside opening hours. Bookings are
+ * never moved automatically, so these show on Shop settings until someone deals with them.
+ */
+export type SettingsClash = {
+  date: string;
+  reason: 'holiday' | 'hours';
+  count: number;
 };
 
 /** POST /owner/holidays: bookings already on that day aren't touched, so say how many. */

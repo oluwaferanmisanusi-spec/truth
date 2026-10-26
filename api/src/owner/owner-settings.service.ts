@@ -4,8 +4,19 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { addDays, shopDayStart } from '../common/format.js';
-import type { HolidayAdded, ShopSettings } from '../contracts/owner.js';
+import {
+  addDays,
+  formatTime,
+  shopDayStart,
+  shopToday,
+  weekdayOf,
+} from '../common/format.js';
+import type {
+  DayHours,
+  HolidayAdded,
+  SettingsClash,
+  ShopSettings,
+} from '../contracts/owner.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { weekFrom, type WeekHours } from './week.js';
 
@@ -26,13 +37,51 @@ export class OwnerSettingsService {
     if (settings.error) throw settings.error;
     if (hours.error) throw hours.error;
     if (holidays.error) throw holidays.error;
+    const week = weekFrom(
+      hours.data.map((h) => ({ ...h, start: h.opens_at, end: h.closes_at })),
+    );
     return {
       timeZone: settings.data.time_zone,
-      hours: weekFrom(
-        hours.data.map((h) => ({ ...h, start: h.opens_at, end: h.closes_at })),
-      ),
+      hours: week,
       holidays: holidays.data,
+      clashes: await this.clashes(
+        week,
+        holidays.data.map((h) => h.date),
+      ),
     };
+  }
+
+  /** See SettingsClash. A holiday counts every booking that day; otherwise times are checked. */
+  private async clashes(
+    week: DayHours[],
+    holidays: string[],
+  ): Promise<SettingsClash[]> {
+    const { data, error } = await this.supabase.admin
+      .from('bookings')
+      .select('starts_at, ends_at')
+      .eq('status', 'confirmed')
+      .gt('starts_at', new Date().toISOString())
+      .order('starts_at');
+    if (error) throw error;
+    const byDay = new Map<string, SettingsClash>();
+    for (const b of data) {
+      const date = shopToday(new Date(b.starts_at));
+      const day = week.find((d) => d.weekday === weekdayOf(date));
+      const holiday = holidays.includes(date);
+      const outside =
+        !day?.isOpen ||
+        formatTime(b.starts_at) < day.startsAt ||
+        formatTime(b.ends_at) > day.endsAt;
+      if (!holiday && !outside) continue;
+      const clash = byDay.get(date) ?? {
+        date,
+        reason: holiday ? 'holiday' : 'hours',
+        count: 0,
+      };
+      clash.count++;
+      byDay.set(date, clash);
+    }
+    return [...byDay.values()];
   }
 
   /** Opening hours and time zone (5.12 → 5.12b). */

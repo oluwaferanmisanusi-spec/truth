@@ -32,6 +32,7 @@ async function Settings() {
       timeZone={settings.timeZone}
       timeZones={TIME_ZONES}
       holidays={settings.holidays}
+      clashes={settings.clashes}
       today={shopToday()}
     />
   );
