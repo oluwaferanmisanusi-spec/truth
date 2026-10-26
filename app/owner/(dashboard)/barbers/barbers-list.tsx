@@ -89,13 +89,14 @@ export function BarbersList({ barbers, activeServiceCount, deactivatedName }: {
       <div className="flex flex-col gap-8">
         <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <table className="w-full table-fixed border-collapse text-left text-small">
+            {/* Email takes what's left (it truncates), so Manage keeps its room on narrower windows. */}
             <colgroup>
               <col className="w-70" />
-              <col className="w-64" />
+              <col />
               <col className="w-39" />
               <col className="w-39" />
               <col className="w-34" />
-              <col />
+              <col className="w-30" />
             </colgroup>
             <thead className="bg-surface-muted text-caption font-medium text-ink-muted">
               <tr className="h-10 border-b border-border">

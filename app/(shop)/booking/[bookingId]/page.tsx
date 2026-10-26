@@ -46,7 +46,9 @@ async function Booking({ params }: Pick<Props, "params">) {
   );
 
   if (booking.screen === "pay") {
-    const account = await getAccount();
+    // Staff logins (barbers, the owner, managers) book like a guest, as the API does.
+    const me = await getAccount();
+    const account = me?.role === "customer" ? me : null;
     return (
       <>
         <StepBar title="Details and payment" back={releaseHold.bind(null, booking.id)} />

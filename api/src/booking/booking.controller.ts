@@ -103,8 +103,8 @@ export class BookingController {
     @Body() body: unknown,
     @CurrentUser() current: Me | null,
   ) {
-    // Barber logins don't book as customers: treat them like a guest.
-    const user = current?.role === 'barber' ? null : current;
+    // Staff logins (barbers, the owner, managers) don't book as customers: treat them like a guest.
+    const user = current?.role === 'customer' ? current : null;
     // Logged in: the account's name and email. Guest: what they typed.
     const details = parseOrThrow(
       Details,

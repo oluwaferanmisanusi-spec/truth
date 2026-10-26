@@ -30,7 +30,9 @@ export default function MyBookingsPage({ searchParams }: Props) {
 
 async function MyBookings({ searchParams }: Pick<Props, "searchParams">) {
   const [account, query] = await Promise.all([requireAccount("/bookings"), searchParams]);
-  if (account.role === "barber") redirect("/barber"); // barber logins don't book
+  // Staff logins don't book: their own area instead.
+  if (account.role === "barber") redirect("/barber");
+  if (account.role === "owner" || account.role === "manager") redirect("/owner/bookings");
   const { upcoming, past } = await api<MyBookings>("/me/bookings");
   const tab = query.tab === "past" ? "past" : "upcoming";
   const list = tab === "past" ? past : upcoming;

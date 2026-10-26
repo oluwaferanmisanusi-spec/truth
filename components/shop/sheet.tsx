@@ -2,7 +2,7 @@
 
 // Figma bottom sheet (3.11, 3.12, 3.25): a confirm that slides up from the bottom on phones.
 // Native <dialog>, so focus is trapped and Escape closes it.
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from "react";
 
 type Props = {
   open: boolean;
@@ -23,6 +23,14 @@ export function Sheet({ open, onClose, title, children, actions }: Props) {
     if (open && !dialog.open) dialog.showModal();
     if (!open && dialog.open) dialog.close();
   }, [open]);
+
+  // Leaving the page keeps it alive but hidden (Next's Activity), so an open sheet would stay
+  // in the browser's top layer and block every click on the next page. Close it on the way
+  // out; its close event resets the parent's state too.
+  useLayoutEffect(() => {
+    const dialog = ref.current;
+    return () => dialog?.close();
+  }, []);
 
   return (
     <dialog

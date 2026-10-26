@@ -2,7 +2,7 @@
 
 // Figma "Modal" (2:605), desktop dialog. Uses the native <dialog> element, which gives
 // focus trapping, Escape to close and the backdrop for free.
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from "react";
 
 type DialogProps = {
   open: boolean;
@@ -25,6 +25,14 @@ export function Dialog({ open, onClose, title, children, actions, wide }: Dialog
     if (open && !dialog.open) dialog.showModal();
     if (!open && dialog.open) dialog.close();
   }, [open]);
+
+  // Leaving the page keeps it alive but hidden (Next's Activity), so an open dialog would stay
+  // in the browser's top layer and block every click on the next page. Close it on the way
+  // out; its close event resets the parent's state too.
+  useLayoutEffect(() => {
+    const dialog = ref.current;
+    return () => dialog?.close();
+  }, []);
 
   return (
     <dialog

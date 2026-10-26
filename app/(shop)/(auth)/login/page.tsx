@@ -26,6 +26,7 @@ async function Login({ searchParams }: Pick<Props, "searchParams">) {
   const hold = await getActiveHold(one(query.hold));
   const account = await getAccount();
   if (account?.role === "barber") redirect("/barber");
+  if (account?.role === "owner" || account?.role === "manager") redirect("/owner/bookings");
   if (account) redirect(hold ? `/booking/${hold.id}` : safeNext(next));
 
   const carry = hold ? `?hold=${hold.id}` : next ? `?next=${encodeURIComponent(safeNext(next))}` : "";

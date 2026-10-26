@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
+import { Suspense } from "react";
+import { SessionGuard } from "@/components/session-guard";
+import { currentUserId } from "@/lib/auth/session";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -24,7 +27,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${fraunces.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <Suspense>
+          <WatchSession />
+        </Suspense>
+      </body>
     </html>
   );
+}
+
+// Reads the login at request time, so it sits behind Suspense (Cache Components).
+async function WatchSession() {
+  return <SessionGuard userId={await currentUserId()} />;
 }
