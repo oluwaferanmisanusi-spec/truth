@@ -15,7 +15,6 @@ import {
   inviteManager,
   removeManager,
   resendManagerInvite,
-  resetManagerTwoStep,
   type InviteResult,
 } from "./actions";
 
@@ -36,7 +35,6 @@ export function ManagersList({ team, isOwner }: { team: Team; isOwner: boolean }
   const [error, setError] = useState<string>();
   const [inviting, setInviting] = useState(false);
   const [removing, setRemoving] = useState<{ id: string; name: string }>();
-  const [resetting, setResetting] = useState<{ id: string; name: string }>();
   const [busyId, setBusyId] = useState<string>();
   const [pending, startTransition] = useTransition();
 
@@ -81,45 +79,32 @@ export function ManagersList({ team, isOwner }: { team: Team; isOwner: boolean }
       <div className="flex flex-col gap-8">
         <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <table className="w-full table-fixed border-collapse text-left text-small">
-            {/* Email takes what's left (it truncates), so the actions keep their room. */}
             <colgroup>
-              <col className="w-64" />
+              <col className="w-80" />
+              <col className="w-80" />
+              <col className="w-40" />
               <col />
-              <col className="w-36" />
-              <col className="w-36" />
-              <col className="w-68" />
             </colgroup>
             <thead className="bg-surface-muted text-caption font-medium text-ink-muted">
               <tr className="h-10 border-b border-border">
                 <th scope="col" className="py-2 pr-2 pl-5 font-medium">Name</th>
                 <th scope="col" className="px-2 py-2 font-medium">Email</th>
                 <th scope="col" className="px-2 py-2 font-medium">Role</th>
-                <th scope="col" className="px-2 py-2 font-medium">Two-step login</th>
                 <th scope="col" className="py-2 pr-5 pl-2"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody>
               <Row name={team.owner.name} email={team.owner.email}
-                role={<span className={`${badge} bg-primary-tint text-primary`}>Owner</span>}
-                twoStep={<TwoStepStatus on={team.owner.twoStep} />} />
+                role={<span className={`${badge} bg-primary-tint text-primary`}>Owner</span>} />
               {team.managers.map((m) => (
                 <Row key={m.id} name={m.isMe ? `${m.name} (you)` : m.name} email={m.email}
                   role={<span className={`${badge} bg-success-tint text-success`}>Manager</span>}
-                  twoStep={<TwoStepStatus on={m.twoStep} />}
                   action={
                     isOwner && (
-                      <span className="flex justify-end gap-1">
-                        {m.twoStep && (
-                          <button type="button" className={buttonClass.ghost} aria-label={`Reset ${m.name}’s two-step login`}
-                            onClick={() => setResetting({ id: m.id, name: m.name })}>
-                            Reset two-step
-                          </button>
-                        )}
-                        <button type="button" className={buttonClass.ghost} aria-label={`Remove ${m.name}`}
-                          onClick={() => setRemoving({ id: m.id, name: m.name })}>
-                          Remove
-                        </button>
-                      </span>
+                      <button type="button" className={buttonClass.ghost} aria-label={`Remove ${m.name}`}
+                        onClick={() => setRemoving({ id: m.id, name: m.name })}>
+                        Remove
+                      </button>
                     )
                   }
                 />
@@ -159,8 +144,7 @@ export function ManagersList({ team, isOwner }: { team: Team; isOwner: boolean }
           )}
         </div>
         <p className="text-caption font-medium text-ink-muted">
-          Invites expire after 7 days. Only the owner can invite or remove managers, or reset a manager’s two-step
-          login if they lose their phone.
+          Invites expire after 7 days. Only the owner can invite or remove managers.
         </p>
       </div>
 
@@ -200,56 +184,11 @@ export function ManagersList({ team, isOwner }: { team: Team; isOwner: boolean }
           send a new invite.
         </p>
       </Dialog>
-
-      <Dialog
-        open={Boolean(resetting)}
-        onClose={() => !pending && setResetting(undefined)}
-        title={`Reset ${resetting?.name ?? "this manager"}’s two-step login?`}
-        actions={
-          <>
-            <button type="button" className={buttonClass.secondary} disabled={pending} onClick={() => setResetting(undefined)}>
-              Cancel
-            </button>
-            <button type="button" className={buttonClass.danger} disabled={pending}
-              onClick={() =>
-                resetting &&
-                run(resetting.id, () => resetManagerTwoStep(resetting.id), () => {
-                  setNotice({
-                    kind: "done",
-                    text: `${resetting.name}’s two-step login is reset. They’ll set it up on their new phone when they next log in.`,
-                  });
-                  setResetting(undefined);
-                })
-              }>
-              {pending ? "Resetting…" : "Reset two-step login"}
-            </button>
-          </>
-        }
-      >
-        <p>
-          Do this if they’ve lost their phone. Their authenticator app stops working for Truth and they’re logged
-          out. When they next log in with their password, they’ll set it up on their new phone.
-        </p>
-      </Dialog>
     </>
   );
 }
 
-function TwoStepStatus({ on }: { on: boolean }) {
-  return on ? (
-    <span className={`${badge} bg-success-tint text-success`}>On</span>
-  ) : (
-    <span className={`${badge} bg-surface-muted text-ink-muted`}>Not set up</span>
-  );
-}
-
-function Row({ name, email, role, twoStep, action }: {
-  name: string;
-  email: string;
-  role: React.ReactNode;
-  twoStep?: React.ReactNode;
-  action?: React.ReactNode;
-}) {
+function Row({ name, email, role, action }: { name: string; email: string; role: React.ReactNode; action?: React.ReactNode }) {
   return (
     <tr className="h-18 border-b border-border last:border-b-0">
       <th scope="row" className="py-3 pr-2 pl-5 font-medium">
@@ -262,7 +201,6 @@ function Row({ name, email, role, twoStep, action }: {
       </th>
       <td className="truncate px-2 py-3 text-ink-muted" title={email}>{email}</td>
       <td className="px-2 py-3">{role}</td>
-      <td className="px-2 py-3">{twoStep ?? <span className="text-ink-muted">–</span>}</td>
       <td className="py-3 pr-5 pl-2 text-right">{action}</td>
     </tr>
   );

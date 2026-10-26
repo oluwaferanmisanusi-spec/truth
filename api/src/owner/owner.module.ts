@@ -10,11 +10,9 @@ import {
   OwnerManagersController,
   OwnerServicesController,
   OwnerSettingsController,
-  TwoStepController,
 } from './owner.controllers.js';
 import { OwnerServicesService } from './owner-services.service.js';
 import { OwnerSettingsService } from './owner-settings.service.js';
-import { TwoStepService } from './two-step.service.js';
 
 @Module({
   // BookingModule shares PaymentsService, for the refund when the owner cancels.
@@ -26,7 +24,6 @@ import { TwoStepService } from './two-step.service.js';
     OwnerSettingsController,
     OwnerManagersController,
     ManagerInvitesController,
-    TwoStepController,
   ],
   providers: [
     OwnerBookingsService,
@@ -34,7 +31,6 @@ import { TwoStepService } from './two-step.service.js';
     OwnerBarbersService,
     OwnerSettingsService,
     OwnerManagersService,
-    TwoStepService,
   ],
 })
 export class OwnerModule {}

@@ -4,8 +4,6 @@
 import "server-only";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { trustedDevice } from "@/lib/auth/trusted-device";
-import { twoStepPath } from "@/lib/auth/two-step";
 import { createClient } from "@/lib/supabase/server";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3200";
@@ -46,28 +44,22 @@ export async function api<T>(path: string, { method = "GET", body }: Options = {
   const supabase = await createClient();
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
-  const device = await trustedDevice();
 
   const res = await fetch(API_URL + path, {
     method,
     headers: {
       ...(await visitorHeaders()),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      // "Remember this device" for two-step login; the API checks it.
-      ...(token && device ? { "X-Trusted-Device": device } : {}),
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
     },
     body: body === undefined ? undefined : JSON.stringify(body),
     cache: "no-store",
   });
   const json = res.status === 204 ? null : await res.json().catch(() => null);
-  // The owner or a manager without two-step login in this session: to the code screen,
-  // rather than an error, wherever the dashboard asked.
-  if (res.status === 403 && json?.code === "two_step_required") redirect((await twoStepPath()) ?? "/owner/two-step");
-  // Their session ended (logged out in another tab, password reset, removed, a two-step
-  // reset): the dashboard and barber pages go to their log in page instead of an error.
+  // Their session ended (logged out in another tab, password reset, removed): the dashboard
+  // and barber pages go to their log in page instead of an error.
   if (res.status === 401 && token) {
-    if (path.startsWith("/owner") || path.startsWith("/two-step")) redirect("/owner/login");
+    if (path.startsWith("/owner")) redirect("/owner/login");
     if (path.startsWith("/barber")) redirect("/login?next=/barber");
   }
   if (!res.ok) {

@@ -16,21 +16,17 @@ const owner: Me = {
   role: 'owner',
   verified: true,
   barberId: null,
-  twoStep: true,
-  trustedDevice: false,
 };
 const customer: Me = { ...owner, id: 'u2', role: 'customer' };
 const barber: Me = { ...owner, id: 'u3', role: 'barber', barberId: 'b1' };
 const inactive: Me = { ...barber, id: 'u4', barberId: null };
 const manager: Me = { ...owner, id: 'u5', role: 'manager' };
-const passwordOnly: Me = { ...owner, id: 'u6', twoStep: false };
 const tokens: Record<string, Me> = {
   'owner-token': owner,
   'customer-token': customer,
   'barber-token': barber,
   'inactive-token': inactive,
   'manager-token': manager,
-  'password-only-token': passwordOnly,
 };
 
 const supabase = {
@@ -114,20 +110,5 @@ describe('AuthGuard', () => {
     await expect(
       run({ roles: ['owner', 'manager'] }, 'Bearer customer-token').result,
     ).rejects.toThrow(ForbiddenException);
-  });
-
-  it('needs two-step login for the dashboard', async () => {
-    await expect(
-      run({ roles: ['owner', 'manager'] }, 'Bearer password-only-token').result,
-    ).rejects.toThrow(ForbiddenException);
-    // /me and other routes without @Roles still work, so the website can ask for the code.
-    expect(await run({}, 'Bearer password-only-token').result).toBe(true);
-    // Customers never need it, even on a route the owner can use too.
-    const customerNoTwoStep = { ...customer, twoStep: false };
-    tokens['customer-no-two-step'] = customerNoTwoStep;
-    expect(
-      await run({ roles: ['customer', 'owner'] }, 'Bearer customer-no-two-step')
-        .result,
-    ).toBe(true);
   });
 });

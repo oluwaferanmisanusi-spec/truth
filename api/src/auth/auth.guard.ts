@@ -36,30 +36,15 @@ export class AuthGuard implements CanActivate {
 
     const req = ctx.switchToHttp().getRequest<AuthedRequest>();
     const [scheme, token] = req.headers.authorization?.split(' ') ?? [];
-    const device = req.headers['x-trusted-device'];
     req.user =
       scheme === 'Bearer' && token
-        ? await this.supabase.userFromToken(
-            token,
-            typeof device === 'string' ? device : undefined,
-          )
+        ? await this.supabase.userFromToken(token)
         : null;
 
     if (isPublic) return true;
     if (!req.user) throw new UnauthorizedException('Log in to continue');
     if (roles && !roles.some((role) => hasRole(req.user!, role)))
       throw new ForbiddenException('Not allowed');
-
-    // The owner and managers need two-step login for the dashboard (2026-10-26): a password
-    // alone isn't enough, even if someone skips the website's code screen. Only they need it:
-    // a route open to customers and the owner (My bookings) stays open to customers.
-    const staff = req.user.role === 'owner' || req.user.role === 'manager';
-    const dashboard = roles?.includes('owner') || roles?.includes('manager');
-    if (staff && dashboard && !req.user.twoStep)
-      throw new ForbiddenException({
-        message: 'Enter the code from your authenticator app to continue.',
-        code: 'two_step_required',
-      });
     return true;
   }
 }

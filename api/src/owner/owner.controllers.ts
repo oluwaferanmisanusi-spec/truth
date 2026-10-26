@@ -1,11 +1,10 @@
 // The owner's desktop screens (Figma 5.1–5.12). @Roles('owner', 'manager') on each class
 // locks every route in it to the owner and managers; a route marked @Roles('owner') is the
-// owner's alone (managing managers). All of them need two-step login (see AuthGuard).
+// owner's alone (inviting managers).
 import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   HttpCode,
   Param,
@@ -41,14 +40,12 @@ import type {
   ShopSettings,
   Stats,
   Team,
-  TrustedDevice,
 } from '../contracts/owner.js';
 import { OwnerBarbersService } from './owner-barbers.service.js';
 import { OwnerBookingsService } from './owner-bookings.service.js';
 import { OwnerManagersService } from './owner-managers.service.js';
 import { OwnerServicesService, ServiceBody } from './owner-services.service.js';
 import { OwnerSettingsService, TIME_ZONES } from './owner-settings.service.js';
-import { TwoStepService } from './two-step.service.js';
 import { WeekHours } from './week.js';
 
 const DateRange = z
@@ -286,10 +283,7 @@ const NewManager = z.object({ name: FullName, password: NewPassword });
 @Roles('owner', 'manager')
 @Controller('owner')
 export class OwnerManagersController {
-  constructor(
-    private readonly managers: OwnerManagersService,
-    private readonly twoStep: TwoStepService,
-  ) {}
+  constructor(private readonly managers: OwnerManagersService) {}
 
   @Get('managers')
   team(@CurrentUser() me: Me): Promise<Team> {
@@ -322,29 +316,6 @@ export class OwnerManagersController {
   @Delete('managers/:id')
   remove(@Param('id', { schema: Id }) id: string) {
     return this.managers.remove(id);
-  }
-
-  @Roles('owner')
-  @Post('managers/:id/reset-two-step')
-  @HttpCode(200)
-  resetTwoStep(@Param('id', { schema: Id }) id: string) {
-    return this.twoStep.reset(id);
-  }
-}
-
-/** The owner's and managers' own two-step login (the app itself is set up with Supabase). */
-@Roles('owner', 'manager')
-@Controller('two-step')
-export class TwoStepController {
-  constructor(private readonly twoStep: TwoStepService) {}
-
-  /** "Remember this device for 30 days", right after a code (a remembered device can't renew itself). */
-  @Post('devices')
-  @HttpCode(200)
-  rememberDevice(@CurrentUser() me: Me): Promise<TrustedDevice> {
-    if (me.trustedDevice)
-      throw new ForbiddenException('Enter the code from your app first.');
-    return this.twoStep.rememberDevice(me.id);
   }
 }
 

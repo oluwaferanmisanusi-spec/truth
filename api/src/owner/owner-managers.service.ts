@@ -13,7 +13,6 @@ import type { Invite, ManagerInvite, Team } from '../contracts/owner.js';
 import { EmailService } from '../email/email.service.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { managerInviteEmail } from './manager-emails.js';
-import { TwoStepService } from './two-step.service.js';
 
 /** Manager invites work for 7 days, like barber invites. */
 const INVITE_DAYS = 7;
@@ -24,7 +23,6 @@ export class OwnerManagersService {
     private readonly supabase: SupabaseService,
     private readonly site: SiteService,
     private readonly email: EmailService,
-    private readonly twoStep: TwoStepService,
   ) {}
 
   async team(me: Me): Promise<Team> {
@@ -45,23 +43,19 @@ export class OwnerManagersService {
     if (people.error) throw people.error;
     if (invites.error) throw invites.error;
     const owner = people.data.find((p) => p.role === 'owner');
-    const managers = people.data.filter((p) => p.role === 'manager');
-    const [ownerSetUp, ...setUp] = await Promise.all(
-      [owner, ...managers].map((p) => (p ? this.twoStep.isSetUp(p.id) : false)),
-    );
     return {
       owner: {
         name: owner?.full_name || 'Shop owner',
         email: owner?.email ?? '',
-        twoStep: ownerSetUp,
       },
-      managers: managers.map((p, i) => ({
-        id: p.id,
-        name: p.full_name,
-        email: p.email,
-        isMe: p.id === me.id,
-        twoStep: setUp[i],
-      })),
+      managers: people.data
+        .filter((p) => p.role === 'manager')
+        .map((p) => ({
+          id: p.id,
+          name: p.full_name,
+          email: p.email,
+          isMe: p.id === me.id,
+        })),
       invites:
         me.role === 'owner'
           ? invites.data.map((i) => ({

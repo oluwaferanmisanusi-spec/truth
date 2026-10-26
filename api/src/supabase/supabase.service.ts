@@ -5,7 +5,6 @@ import { ConfigService } from '@nestjs/config';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Env } from '../config/env.js';
 import type { Me } from '../contracts/me.js';
-import { hashToken } from '../common/tokens.js';
 import type { Database } from './database.types.js';
 
 @Injectable()
@@ -20,11 +19,8 @@ export class SupabaseService {
     );
   }
 
-  /**
-   * The person behind a Supabase access token, or null if it's invalid or expired.
-   * `device` is the website's "Remember this device" pass, for two-step login.
-   */
-  async userFromToken(token: string, device?: string): Promise<Me | null> {
+  /** The person behind a Supabase access token, or null if it's invalid or expired. */
+  async userFromToken(token: string): Promise<Me | null> {
     // getClaims checks the token's signature and expiry before trusting what it says.
     const { data, error } = await this.admin.auth.getClaims(token);
     const userId = data?.claims.sub;
@@ -50,11 +46,6 @@ export class SupabaseService {
         this.admin.rpc('session_is_active', { p_session_id: sessionId }),
       ]);
     if (!profile || !active) return null;
-    const code = data.claims.aal === 'aal2';
-    const trustedDevice =
-      !code &&
-      (profile.role === 'owner' || profile.role === 'manager') &&
-      (await this.isTrustedDevice(userId, device));
     return {
       id: profile.id,
       email: profile.email,
@@ -62,20 +53,6 @@ export class SupabaseService {
       role: profile.role,
       verified: Boolean(profile.email_verified_at),
       barberId: barber?.id ?? null,
-      twoStep: code || trustedDevice,
-      trustedDevice,
     };
-  }
-
-  private async isTrustedDevice(userId: string, device?: string) {
-    if (!device || device.length > 100) return false;
-    const { data } = await this.admin
-      .from('two_step_trusted_devices')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('token_hash', hashToken(device))
-      .gt('expires_at', new Date().toISOString())
-      .maybeSingle();
-    return Boolean(data);
   }
 }

@@ -1,7 +1,7 @@
 "use server";
 
 // Managers (decided 2026-10-24, built from the owner components). The API checks who may
-// do each: only the owner invites, resends, cancels, removes and resets two-step login.
+// do each: only the owner invites, resends or cancels; the owner or a manager removes.
 import { refresh } from "next/cache";
 import type { Invite } from "@api/owner";
 import { api, ApiError } from "@/lib/api/client";
@@ -47,18 +47,6 @@ export async function cancelManagerInvite(id: string): Promise<{ error?: string 
 export async function removeManager(id: string): Promise<{ error?: string }> {
   try {
     await api(`/owner/managers/${encodeURIComponent(id)}`, { method: "DELETE" });
-    refresh();
-    return {};
-  } catch (error) {
-    if (!(error instanceof ApiError) || error.status >= 500) throw error;
-    return { error: error.message };
-  }
-}
-
-/** Owner only: a manager who lost their phone sets two-step login up again. */
-export async function resetManagerTwoStep(id: string): Promise<{ error?: string }> {
-  try {
-    await api(`/owner/managers/${encodeURIComponent(id)}/reset-two-step`, { method: "POST" });
     refresh();
     return {};
   } catch (error) {

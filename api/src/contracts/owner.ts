@@ -135,15 +135,8 @@ export type Invite = {
 
 /** GET /owner/managers: who can use the owner dashboard. */
 export type Team = {
-  owner: { name: string; email: string; twoStep: boolean };
-  managers: {
-    id: string;
-    name: string;
-    email: string;
-    isMe: boolean;
-    /** Has set up their authenticator app (two-step login). */
-    twoStep: boolean;
-  }[];
+  owner: { name: string; email: string };
+  managers: { id: string; name: string; email: string; isMe: boolean }[];
   /** Invites not yet accepted; only the owner sees these. */
   invites: { id: string; email: string; expiresAt: string; expired: boolean }[];
 };
@@ -176,6 +169,3 @@ export type SettingsClash = {
 
 /** POST /owner/holidays: bookings already on that day aren't touched, so say how many. */
 export type HolidayAdded = { date: string; bookingsThatDay: number };
-
-/** POST /two-step/devices: the pass for "Remember this device", kept in a cookie by the website. */
-export type TrustedDevice = { token: string; expiresAt: string };
