@@ -43,7 +43,12 @@ export type Stats = {
   bookings: number;
   cancelled: number;
   noShows: number;
+  /** Bookings that weren't cancelled: done, awaiting an outcome or still to come. */
   appointments: number;
+  /** Completed + no-shows: the appointments the no-show rate is worked out from. */
+  recorded: number;
+  /** Started, but no outcome recorded yet (the Bookings "Needs outcome" filter). */
+  awaitingOutcome: number;
   noShowRate: number | null;
   barbers: {
     id: string;
@@ -51,6 +56,7 @@ export type Stats = {
     appointments: number;
     completed: number;
     noShows: number;
+    awaitingOutcome: number;
     noShowRate: number | null;
     revenueKobo: number;
   }[];

@@ -681,7 +681,7 @@ isOneToOne: false
                            },
 "owner_stats":
 { Args: { "p_from": string,"p_to": string }; Returns: {
-              "barber_id": string,"bookings": number,"cancelled": number,"completed": number,"full_name": string,"no_shows": number,"paid_kobo": number,"refunded_kobo": number
+              "awaiting": number,"barber_id": string,"bookings": number,"cancelled": number,"completed": number,"full_name": string,"no_shows": number,"paid_kobo": number,"refunded_kobo": number
             }[]
                            },
 "record_payment":

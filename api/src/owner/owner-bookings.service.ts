@@ -154,31 +154,35 @@ export class OwnerBookingsService {
     if (error) throw error;
     const rows = data ?? [];
 
+    // Appointments are bookings that weren't cancelled; the no-show rate only uses the ones with
+    // an outcome, since one awaiting an outcome may still turn out to be a no-show.
     const barbers = rows.map((b) => {
-      const appointments = b.completed + b.no_shows;
+      const recorded = b.completed + b.no_shows;
       return {
         id: b.barber_id,
         name: b.full_name,
-        appointments,
+        appointments: b.bookings - b.cancelled,
         completed: b.completed,
         noShows: b.no_shows,
-        noShowRate: appointments ? b.no_shows / appointments : null,
+        awaitingOutcome: b.awaiting,
+        noShowRate: recorded ? b.no_shows / recorded : null,
         revenueKobo: b.paid_kobo - b.refunded_kobo,
       };
     });
     const sum = (pick: (b: (typeof rows)[number]) => number) =>
       rows.reduce((n, b) => n + pick(b), 0);
-    const completed = sum((b) => b.completed);
     const noShows = sum((b) => b.no_shows);
-    const appointments = completed + noShows;
+    const recorded = sum((b) => b.completed) + noShows;
     return {
       revenueKobo: sum((b) => b.paid_kobo) - sum((b) => b.refunded_kobo),
       refundsKobo: sum((b) => b.refunded_kobo),
       bookings: sum((b) => b.bookings),
       cancelled: sum((b) => b.cancelled),
       noShows,
-      appointments,
-      noShowRate: appointments ? noShows / appointments : null,
+      appointments: sum((b) => b.bookings - b.cancelled),
+      recorded,
+      awaitingOutcome: sum((b) => b.awaiting),
+      noShowRate: recorded ? noShows / recorded : null,
       // The table lists barbers who had appointments; one with only cancellations still shows.
       barbers,
     };

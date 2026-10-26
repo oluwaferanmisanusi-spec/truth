@@ -1141,6 +1141,7 @@ export type Database = {
       owner_stats: {
         Args: { p_from: string; p_to: string };
         Returns: {
+          awaiting: number;
           barber_id: string;
           bookings: number;
           cancelled: number;

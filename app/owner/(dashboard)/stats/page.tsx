@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { Calendar } from "lucide-react";
 import { PageHeader } from "@/components/owner/page-header";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, shopToday } from "@/lib/format";
 import { getStats, parseStatsRange } from "@/lib/owner/stats";
 import { StatsRange } from "./range";
 
@@ -31,6 +31,15 @@ async function StatsResults({ searchParams }: { searchParams: PageProps<"/owner/
   await connection(); // the default range depends on today's date
   const range = parseStatsRange(await searchParams);
   const stats = await getStats(range);
+  // Bookings → Needs outcome for these dates (only past days can have appointments awaiting one).
+  const today = shopToday();
+  const needsOutcome = (barber?: string) =>
+    `/owner/bookings?${new URLSearchParams({
+      status: "needs_outcome",
+      ...(barber ? { barber } : {}),
+      from: range.from,
+      to: range.to < today ? range.to : today,
+    })}`;
 
   return (
     <>
@@ -51,7 +60,11 @@ async function StatsResults({ searchParams }: { searchParams: PageProps<"/owner/
         <StatCard
           label="No-show rate"
           value={percent(stats.noShowRate)}
-          detail={stats.appointments ? `${stats.noShows} of ${plural(stats.appointments, "appointment", "appointments")}` : "No appointments yet"}
+          detail={
+            stats.recorded
+              ? `${stats.noShows} of ${plural(stats.recorded, "appointment", "appointments")} with an outcome`
+              : "No outcomes recorded yet"
+          }
         />
       </div>
 
@@ -72,11 +85,12 @@ async function StatsResults({ searchParams }: { searchParams: PageProps<"/owner/
             <div className="overflow-hidden rounded-lg border border-border bg-surface">
               <table className="w-full table-fixed border-collapse text-small">
                 <colgroup>
-                  <col className="w-74" />
-                  <col className="w-39" />
-                  <col className="w-39" />
-                  <col className="w-39" />
-                  <col className="w-39" />
+                  <col className="w-60" />
+                  <col className="w-32" />
+                  <col className="w-32" />
+                  <col className="w-32" />
+                  <col className="w-36" />
+                  <col className="w-32" />
                   <col />
                 </colgroup>
                 <thead className="bg-surface-muted text-caption font-medium text-ink-muted">
@@ -85,6 +99,7 @@ async function StatsResults({ searchParams }: { searchParams: PageProps<"/owner/
                     <th scope="col" className="px-2 py-2 font-medium">Appointments</th>
                     <th scope="col" className="px-2 py-2 font-medium">Completed</th>
                     <th scope="col" className="px-2 py-2 font-medium">No-shows</th>
+                    <th scope="col" className="px-2 py-2 font-medium">Awaiting outcome</th>
                     <th scope="col" className="px-2 py-2 font-medium">No-show rate</th>
                     <th scope="col" className="py-2 pr-5 pl-2 font-medium">Revenue</th>
                   </tr>
@@ -103,6 +118,19 @@ async function StatsResults({ searchParams }: { searchParams: PageProps<"/owner/
                       <td className="px-2 py-3">{b.appointments}</td>
                       <td className="px-2 py-3">{b.completed}</td>
                       <td className="px-2 py-3">{b.noShows}</td>
+                      <td className="px-2 py-3">
+                        {b.awaitingOutcome ? (
+                          <a
+                            href={needsOutcome(b.id)}
+                            aria-label={`${b.awaitingOutcome} awaiting an outcome for ${b.name}: show them`}
+                            className="font-medium text-primary underline underline-offset-2 hover:text-primary-hover"
+                          >
+                            {b.awaitingOutcome}
+                          </a>
+                        ) : (
+                          0
+                        )}
+                      </td>
                       <td className="px-2 py-3 font-medium">{percent(b.noShowRate)}</td>
                       <td className="py-3 pr-5 pl-2 font-medium">{formatNaira(b.revenueKobo)}</td>
                     </tr>
@@ -110,9 +138,19 @@ async function StatsResults({ searchParams }: { searchParams: PageProps<"/owner/
                 </tbody>
               </table>
             </div>
+            {/* Awaiting outcome column and note: decided with the shop on 2026-10-26, not in Figma 5.4. */}
             <p className="text-caption font-medium text-ink-muted">
-              No-show rate = no-shows ÷ appointments that took place (completed + no-shows). Cancelled bookings aren’t
-              counted as appointments.
+              Appointments = bookings that weren’t cancelled, including ones still to come. Awaiting outcome = started,
+              but not yet marked completed or no-show. No-show rate = no-shows ÷ appointments with an outcome (completed +
+              no-shows).
+              {stats.awaitingOutcome > 0 && (
+                <>
+                  {" "}
+                  <a href={needsOutcome()} className="text-primary underline underline-offset-2 hover:text-primary-hover">
+                    Show the {plural(stats.awaitingOutcome, "appointment", "appointments")} awaiting an outcome
+                  </a>
+                </>
+              )}
             </p>
           </>
         )}
