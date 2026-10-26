@@ -162,6 +162,7 @@ export class ManageService {
         ? data.starts_at
         : new Date(Date.parse(data.starts_at) - windowMs).toISOString(),
       shopAsked,
+      askedToMove: Boolean(data.reschedule_requested_at),
     };
   }
 

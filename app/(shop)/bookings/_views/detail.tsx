@@ -101,7 +101,9 @@ async function Detail({ m }: { m: Managed }) {
             <Alert variant="info" title={b.refundDue ? `Refunded ${formatNaira(b.refund?.amountKobo ?? b.priceKobo)}` : "No refund"}>
               {b.cancelledBy === "owner"
                 ? `Truth cancelled this booking on ${formatDay(b.cancelledAt)} and refunded you in full. The refund goes to the card you paid with.`
-                : b.refundDue
+                : b.refundDue && b.askedToMove
+                  ? `You cancelled on ${formatDay(b.cancelledAt)} after the shop asked you to move this booking, so you were refunded in full. The refund goes to the card you paid with.`
+                  : b.refundDue
                   ? `You cancelled on ${formatDay(b.cancelledAt)}, more than ${words.refundWindow} before your appointment. The refund goes to the card you paid with.`
                   : `You cancelled on ${formatDay(b.cancelledAt)}, less than ${words.refundWindow} before your appointment, so this booking wasn’t refunded.`}
             </Alert>

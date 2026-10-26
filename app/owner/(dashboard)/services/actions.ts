@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { refresh } from "next/cache";
 import { api, ApiError } from "@/lib/api/client";
 
@@ -33,6 +33,7 @@ export async function saveService(_prev: ServiceFormState, formData: FormData): 
       body: values,
     });
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof ApiError && Object.keys(error.fieldErrors).length) {
       return { errors: error.fieldErrors, values };
     }
@@ -48,6 +49,7 @@ export async function setServiceActive(id: string, isActive: boolean): Promise<{
   try {
     await api(`/owner/services/${encodeURIComponent(id)}/active`, { method: "PUT", body: { active: isActive } });
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof ApiError && (error.status === 404 || error.status === 400)) return { error: "This service couldn’t be found." };
     console.error("setServiceActive failed", error);
     return { error: "Something went wrong. Please try again." };

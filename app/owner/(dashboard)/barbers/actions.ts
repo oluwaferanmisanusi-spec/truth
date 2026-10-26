@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { refresh } from "next/cache";
 import type { Invite } from "@api/owner";
 import { api, ApiError } from "@/lib/api/client";
@@ -19,6 +19,7 @@ export async function inviteBarber(_prev: InviteResult, formData: FormData): Pro
     refresh();
     return invite;
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof ApiError && error.fieldErrors.email) return { error: error.fieldErrors.email, email };
     if (error instanceof ApiError && (error.code === "email_taken" || error.code === "email_has_account")) {
       return { error: error.message, email };
@@ -35,6 +36,7 @@ export async function resendInvite(barberId: string): Promise<InviteResult> {
     refresh();
     return invite;
   } catch (error) {
+    unstable_rethrow(error);
     if (!(error instanceof ApiError) || error.status >= 500) console.error("Resend invite failed", error);
     return { error: "This invite couldn’t be resent. The barber may have already joined." };
   }
@@ -52,6 +54,7 @@ export async function saveBarber(_prev: BarberFormState, formData: FormData): Pr
   try {
     await api(`/owner/barbers/${encodeURIComponent(id)}`, { method: "PUT", body: { serviceIds, hours: days } });
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof ApiError && (error.status === 404 || error.status === 400)) {
       return { error: error.status === 404 ? "This barber couldn’t be found." : "Check the services and working hours." };
     }
@@ -67,6 +70,7 @@ export async function setBarberActive(barberId: string, active: boolean): Promis
   try {
     await api(`/owner/barbers/${encodeURIComponent(barberId)}/active`, { method: "PUT", body: { active } });
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof ApiError && error.code === "has_upcoming_bookings") return { error: error.message };
     if (error instanceof ApiError && (error.status === 404 || error.status === 400)) return { error: "This barber couldn’t be found." };
     console.error("Set barber active failed", error);

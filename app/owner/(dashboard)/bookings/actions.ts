@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { api, ApiError } from "@/lib/api/client";
 
 export type CancelResult = { error?: string; refundFailed?: boolean };
@@ -15,6 +16,7 @@ export async function cancelBooking(bookingId: string): Promise<CancelResult> {
       { method: "POST" },
     ));
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof ApiError && error.code === "not_cancellable") return { error: error.message };
     console.error("Owner cancel failed", error);
     return { error: "Something went wrong and the booking wasn’t cancelled. Please try again." };
@@ -36,6 +38,7 @@ export async function askToReschedule(bookingId: string, reason: RescheduleReaso
       body: { reason, ...(reason === "other" ? { note } : {}) },
     });
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof ApiError && error.code === "not_movable") return { error: error.message };
     if (error instanceof ApiError && error.fieldErrors.note) return { error: "Tell the customer why, in 300 characters or fewer." };
     console.error("Ask to reschedule failed", error);

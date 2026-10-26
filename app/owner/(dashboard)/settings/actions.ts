@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import type { HolidayAdded } from "@api/owner";
 import { api, ApiError } from "@/lib/api/client";
 import { parseWeekHours } from "@/lib/owner/hours";
@@ -17,6 +18,7 @@ export async function saveShopSettings(_prev: SettingsState, formData: FormData)
   try {
     await api("/owner/settings", { method: "PUT", body: { hours: days, timeZone } });
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof ApiError && error.fieldErrors.timeZone) return { error: error.fieldErrors.timeZone };
     if (error instanceof ApiError && error.status === 400) return { error: "Check the opening hours." };
     console.error("Save shop settings failed", error);
@@ -38,6 +40,7 @@ export async function addHoliday(_prev: HolidayResult, formData: FormData): Prom
   try {
     added = await api<HolidayAdded>("/owner/holidays", { method: "POST", body: { date, name } });
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof ApiError && error.fieldErrors.date) {
       return { error: error.fieldErrors.date.startsWith("Use a date") ? "Choose a valid date." : error.fieldErrors.date };
     }
@@ -66,6 +69,7 @@ export async function removeHoliday(id: string): Promise<HolidayResult> {
   try {
     removed = await api(`/owner/holidays/${encodeURIComponent(id)}`, { method: "DELETE" });
   } catch (error) {
+    unstable_rethrow(error);
     if (!(error instanceof ApiError) || error.status >= 500) console.error("Remove holiday failed", error);
     return { error: "That holiday couldn’t be removed. Please try again." };
   }

@@ -35,7 +35,11 @@ export function Sheet({ open, onClose, title, children, actions }: Props) {
   return (
     <dialog
       ref={ref}
-      onClose={onClose}
+      // A late close event from the cleanup below can land after the dialog has opened again
+      // (React's development double-mount does this): only pass on a close that stuck.
+      onClose={() => {
+        if (!ref.current?.open) onClose();
+      }}
       onClick={(e) => {
         if (e.target === ref.current) onClose(); // tap on the scrim
       }}

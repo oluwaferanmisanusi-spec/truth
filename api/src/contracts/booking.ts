@@ -94,6 +94,8 @@ export type ManagedBooking = {
    * gave. Until the appointment, moving is free and cancelling refunds in full.
    */
   shopAsked: { reason: string } | null;
+  /** The shop asked them to move it at some point (kept after a cancel, for the wording). */
+  askedToMove: boolean;
 };
 
 /** GET /me/bookings: upcoming soonest first, past latest first. */

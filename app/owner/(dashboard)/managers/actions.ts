@@ -3,6 +3,7 @@
 // Managers (decided 2026-10-24, built from the owner components). The API checks who may
 // do each: only the owner invites, resends or cancels; the owner or a manager removes.
 import { refresh } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import type { Invite } from "@api/owner";
 import { api, ApiError } from "@/lib/api/client";
 
@@ -15,6 +16,7 @@ export async function inviteManager(_prev: InviteResult, formData: FormData): Pr
     refresh();
     return invite;
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof ApiError && error.fieldErrors.email) return { error: error.fieldErrors.email, email };
     if (error instanceof ApiError && error.status === 409) return { error: error.message, email };
     console.error("Manager invite failed", error);
@@ -28,6 +30,7 @@ export async function resendManagerInvite(id: string): Promise<InviteResult> {
     refresh();
     return invite;
   } catch (error) {
+    unstable_rethrow(error);
     if (!(error instanceof ApiError) || error.status >= 500) console.error("Resend failed", error);
     return { error: "This invite couldn’t be resent. It may have been accepted or cancelled." };
   }
@@ -39,6 +42,7 @@ export async function cancelManagerInvite(id: string): Promise<{ error?: string 
     refresh();
     return {};
   } catch (error) {
+    unstable_rethrow(error);
     if (!(error instanceof ApiError) || error.status >= 500) throw error;
     return { error: "This invite couldn’t be cancelled. It may have been accepted already." };
   }
@@ -50,6 +54,7 @@ export async function removeManager(id: string): Promise<{ error?: string }> {
     refresh();
     return {};
   } catch (error) {
+    unstable_rethrow(error);
     if (!(error instanceof ApiError) || error.status >= 500) throw error;
     return { error: error.message };
   }

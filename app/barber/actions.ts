@@ -2,7 +2,7 @@
 
 // Barber screens' forms and buttons. Each goes through the API, which checks the person is
 // an active barber and only touches their own schedule.
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import type { BlockAdded, BlockRemoved } from "@api/barber";
 import { api, ApiError } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
@@ -35,6 +35,7 @@ export async function acceptInvite(token: string, _prev: InviteState | undefined
       body: { name, password },
     }));
   } catch (error) {
+    unstable_rethrow(error);
     if (!(error instanceof ApiError) || error.status >= 500) throw error;
     if (error.status === 400) return { errors: error.fieldErrors, values: { name } };
     if (error.status === 429) return { errors: { form: error.message }, values: { name } };
@@ -53,6 +54,7 @@ export async function recordOutcome(id: string, outcome: "completed" | "no_show"
   try {
     await api(`/barber/appointments/${encodeURIComponent(id)}/outcome`, { method: "POST", body: { outcome } });
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof ApiError && error.status === 409) return { error: error.message };
     throw error;
   }
@@ -84,6 +86,7 @@ export async function addBlock(back: string, _prev: BlockState | undefined, fd: 
   try {
     added = await api<BlockAdded>("/barber/blocks", { method: "POST", body });
   } catch (error) {
+    unstable_rethrow(error);
     if (!(error instanceof ApiError) || error.status >= 500) throw error;
     const e = error.fieldErrors;
     // Whole days have their own From and To date fields on the page.
@@ -116,6 +119,7 @@ export async function removeBlock(id: string, date: string): Promise<{ error?: s
   try {
     removed = await api<BlockRemoved>(`/barber/blocks/${encodeURIComponent(id)}`, { method: "DELETE" });
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof ApiError && error.status < 500) return { error: error.message };
     throw error;
   }
