@@ -56,13 +56,15 @@ export class AuthGuard implements CanActivate {
       throw new ForbiddenException('Not allowed');
 
     // The owner and managers need two-step login for the dashboard (2026-10-26): a password
-    // alone isn't enough, even if someone skips the website's code screen.
+    // alone isn't enough, even if someone skips the website's code screen. Only they need it:
+    // a route open to customers and the owner (My bookings) stays open to customers.
+    const staff = req.user.role === 'owner' || req.user.role === 'manager';
     const dashboard = roles?.includes('owner') || roles?.includes('manager');
     const skip = this.reflector.getAllAndOverride<boolean>(
       SKIP_TWO_STEP,
       targets,
     );
-    if (dashboard && !req.user.twoStep && !skip)
+    if (staff && dashboard && !req.user.twoStep && !skip)
       throw new ForbiddenException({
         message: 'Enter the code from your authenticator app to continue.',
         code: 'two_step_required',

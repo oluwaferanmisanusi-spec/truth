@@ -135,5 +135,12 @@ describe('AuthGuard', () => {
     ).toBe(true);
     // /me and other routes without @Roles still work, so the website can ask for the code.
     expect(await run({}, 'Bearer password-only-token').result).toBe(true);
+    // Customers never need it, even on a route the owner can use too.
+    const customerNoTwoStep = { ...customer, twoStep: false };
+    tokens['customer-no-two-step'] = customerNoTwoStep;
+    expect(
+      await run({ roles: ['customer', 'owner'] }, 'Bearer customer-no-two-step')
+        .result,
+    ).toBe(true);
   });
 });
