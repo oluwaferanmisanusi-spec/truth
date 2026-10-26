@@ -47,3 +47,17 @@ export async function askToReschedule(bookingId: string, reason: RescheduleReaso
   refresh();
   return result;
 }
+
+// The owner refunded it in Paystack themselves (after it didn't go through): record that.
+export async function markRefunded(refundId: string): Promise<{ error?: string }> {
+  try {
+    await api(`/owner/refunds/${encodeURIComponent(refundId)}/mark-refunded`, { method: "POST" });
+  } catch (error) {
+    unstable_rethrow(error);
+    if (error instanceof ApiError && error.code === "refund_changed") return { error: error.message };
+    console.error("Mark refunded failed", error);
+    return { error: "Something went wrong and it wasn’t marked. Please try again." };
+  }
+  refresh();
+  return {};
+}

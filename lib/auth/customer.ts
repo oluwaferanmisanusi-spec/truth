@@ -25,12 +25,16 @@ export async function requireAccount(next: string) {
 /**
  * Only same-site paths, so a link can't bounce someone to another website. Parsed the way a
  * browser would, which also catches tricks like "/\\evil.com" (browsers read it as "//evil.com").
+ * The result is checked too: tidying "/.//evil.com" or "/%2e//evil.com" gives "//evil.com",
+ * which a browser would treat as another website.
  */
 export function safeNext(next: unknown, fallback = "/bookings") {
   if (typeof next !== "string" || !next.startsWith("/")) return fallback;
   try {
     const url = new URL(next, "https://same.invalid");
-    return url.origin === "https://same.invalid" ? url.pathname + url.search + url.hash : fallback;
+    if (url.origin !== "https://same.invalid") return fallback;
+    const path = url.pathname + url.search + url.hash;
+    return path.startsWith("//") || path.startsWith("/\\") ? fallback : path;
   } catch {
     return fallback;
   }

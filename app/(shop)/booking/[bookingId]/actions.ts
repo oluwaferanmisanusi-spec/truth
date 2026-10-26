@@ -21,7 +21,9 @@ export async function startPayment(bookingId: string, _prev: DetailsState | unde
   } catch (error) {
     if (!(error instanceof ApiError)) throw error;
     if (error.status === 400) return { errors: error.fieldErrors, values };
-    if (error.code === "paystack_unreachable" || error.status === 429) return { errors: { form: error.message }, values };
+    if (error.code === "paystack_unreachable" || error.code === "payment_not_started" || error.status === 429) {
+      return { errors: { form: error.message }, values };
+    }
     // The hold ran out or was already paid: show whatever screen it's on now.
     redirect(`/booking/${bookingId}`);
   }

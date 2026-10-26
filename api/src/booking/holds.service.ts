@@ -6,6 +6,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { SiteService } from '../common/site.service.js';
 import type { Hold, HoldScreen } from '../contracts/booking.js';
@@ -143,6 +144,25 @@ export class HoldsService {
     if (existing?.authorization_url)
       return { checkoutUrl: existing.authorization_url };
 
+    // Record the payment before Paystack hears of it. A payment we can't match to the booking
+    // would charge the customer with no booking and no refund, so if this can't be saved they
+    // aren't sent to pay. (A row from an earlier try without a checkout link is reused.)
+    if (!existing) {
+      const { error: saveError } = await db.from('payments').insert({
+        booking_id: id,
+        reference: hold.reference,
+        amount_kobo: hold.priceKobo,
+      });
+      if (saveError) {
+        this.logger.error('Payment not recorded', saveError);
+        throw new ServiceUnavailableException({
+          message:
+            'Something went wrong on our side, so payment didn’t start. Your time is still held, so please try again.',
+          code: 'payment_not_started',
+        });
+      }
+    }
+
     try {
       const checkoutUrl = await this.paystack.initializeTransaction({
         reference: hold.reference,
@@ -151,12 +171,12 @@ export class HoldsService {
         callbackUrl: this.site.url(`/booking/${id}/confirming`),
         metadata: { booking_id: id, service: hold.serviceName },
       });
-      await db.from('payments').insert({
-        booking_id: id,
-        reference: hold.reference,
-        amount_kobo: hold.priceKobo,
-        authorization_url: checkoutUrl,
-      });
+      // Kept for "Pay again"; the payment matches by reference even if this isn't saved.
+      const { error: urlError } = await db
+        .from('payments')
+        .update({ authorization_url: checkoutUrl })
+        .eq('booking_id', id);
+      if (urlError) this.logger.error('Checkout link not saved', urlError);
       return { checkoutUrl };
     } catch (e) {
       this.logger.error('Payment not started', e);

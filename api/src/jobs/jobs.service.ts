@@ -2,10 +2,15 @@
 // Each job is safe to run twice: it only acts on rows that still need it.
 import { Injectable, Logger } from '@nestjs/common';
 import { SiteService } from '../common/site.service.js';
-import { PaymentsService } from '../booking/payments.service.js';
+import {
+  PaymentsService,
+  REFUND_RETRY_GAP_MS,
+  REFUND_TRIES,
+} from '../booking/payments.service.js';
 import { EmailService } from '../email/email.service.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 import { outcomeReminderEmail } from './reminder-email.js';
+import { refundsFailedEmail } from './refund-email.js';
 
 const MINUTE = 60_000;
 const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
@@ -56,14 +61,20 @@ export class JobsService {
       }
     }
 
-    // 3. Refunds that failed to send to Paystack: try again. Ones stuck mid-send are left
-    // for a person to check in Paystack, so a customer is never refunded twice.
+    // 3. Refunds that didn't go through (not sent, or Paystack rejected them): try again,
+    // REFUND_TRIES times in all, REFUND_RETRY_GAP_MS apart. Ones stuck mid-send are left for a
+    // person to check in Paystack, so a customer is never refunded twice. (Paystack also
+    // refuses to refund more than was paid.)
     const { data: refunds, error: refundError } = await db
       .from('refunds')
       .select('id')
       .in('status', ['pending', 'failed'])
       .is('provider_refund_id', null)
+      .lt('attempts', REFUND_TRIES)
       .lt('created_at', ago(5 * MINUTE))
+      .or(
+        `last_attempt_at.is.null,last_attempt_at.lt.${ago(REFUND_RETRY_GAP_MS)}`,
+      )
       .limit(20);
     if (refundError) throw refundError;
     const retried: Record<string, number> = {};
@@ -71,6 +82,7 @@ export class JobsService {
       const result = await this.payments.sendRefund(r.id);
       retried[result] = (retried[result] ?? 0) + 1;
     }
+    const gaveUp = await this.giveUpOnRefunds();
     const { count: stuck } = await db
       .from('refunds')
       .select('id', { count: 'exact', head: true })
@@ -94,10 +106,51 @@ export class JobsService {
       holdsExpired: expired.length,
       paymentsChecked: settled,
       refundsRetried: retried,
+      refundsGivenUp: gaveUp,
       refundsStuck: stuck ?? 0,
     };
     this.logger.log(`Tidy: ${JSON.stringify(result)}`);
     return result;
+  }
+
+  /**
+   * Refunds still failing after every try: stop retrying and email the owner, once, to
+   * refund them in Paystack and mark them refunded on the Bookings page.
+   */
+  private async giveUpOnRefunds() {
+    const db = this.supabase.admin;
+    const { data, error } = await db
+      .from('refunds')
+      .update({ gave_up_at: new Date().toISOString() })
+      .eq('status', 'failed')
+      .gte('attempts', REFUND_TRIES)
+      .is('gave_up_at', null)
+      .is('settled_by_hand_at', null)
+      .select(
+        'amount_kobo, payments!inner(bookings!inner(reference, customer_name, starts_at))',
+      );
+    if (error) throw error;
+    if (!data.length) return 0;
+    const { data: owners } = await db
+      .from('profiles')
+      .select('email')
+      .eq('role', 'owner');
+    const refunds = data.map((r) => ({
+      amountKobo: r.amount_kobo,
+      reference: r.payments.bookings.reference,
+      customerName: r.payments.bookings.customer_name,
+      startsAt: r.payments.bookings.starts_at,
+    }));
+    for (const owner of owners ?? []) {
+      await this.email.send(
+        refundsFailedEmail(
+          owner.email,
+          refunds,
+          this.site.url('/owner/bookings?status=refund_failed'),
+        ),
+      );
+    }
+    return data.length;
   }
 
   /** 19:00 WAT: email each active barber whose started appointments still have no outcome. */

@@ -1,6 +1,6 @@
 // Data for the owner Bookings screen (Figma 5.1), from the API's /owner routes.
 import "server-only";
-import type { BookingFilterOptions, OutcomesDue, OwnerBooking } from "@api/owner";
+import type { BookingFilterOptions, OutcomesDue, OwnerBooking, RefundProblems } from "@api/owner";
 import { api } from "@/lib/api/client";
 import { isIsoDate, shopToday } from "@/lib/format";
 import { BOOKING_STATUS_LABELS } from "@/components/status-badge";
@@ -14,12 +14,19 @@ export type BookingFilters = {
 };
 
 /**
- * Statuses the owner can filter by. Expired holds never show in the table. "Needs outcome" is
- * confirmed appointments that have started without the barber marking them.
+ * Statuses the owner can filter by. Expired holds only show under "Refund failed" (a late
+ * payment refunded). "Needs outcome" is confirmed appointments that have started without the
+ * barber marking them; "Refund failed" is bookings with a refund that didn't go through.
  */
-export const FILTER_STATUSES = ["pending_payment", "confirmed", "completed", "no_show", "cancelled", "needs_outcome"] as const;
+export const FILTER_STATUSES = [
+  "pending_payment", "confirmed", "completed", "no_show", "cancelled", "needs_outcome", "refund_failed",
+] as const;
 type FilterStatus = (typeof FILTER_STATUSES)[number];
-const FILTER_LABELS: Record<FilterStatus, string> = { ...BOOKING_STATUS_LABELS, needs_outcome: "Needs outcome" };
+const FILTER_LABELS: Record<FilterStatus, string> = {
+  ...BOOKING_STATUS_LABELS,
+  needs_outcome: "Needs outcome",
+  refund_failed: "Refund failed",
+};
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -58,4 +65,8 @@ export async function listFilterOptions() {
 
 export async function getOutcomesDue() {
   return api<OutcomesDue>("/owner/outcomes-due");
+}
+
+export async function getRefundProblems() {
+  return api<RefundProblems>("/owner/refund-problems");
 }

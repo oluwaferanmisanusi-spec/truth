@@ -23,6 +23,21 @@ export type OwnerBooking = {
   cancellable: boolean;
   /** The shop asked the customer to move it and they haven't yet. */
   rescheduleAsked: boolean;
+  /** A refund owed on it didn't go through (Paystack refused or couldn't be reached). */
+  refundFailed: {
+    refundId: string;
+    amountKobo: number;
+    /** Automatic retries have stopped; the owner refunds it in Paystack. */
+    givenUp: boolean;
+  } | null;
+};
+
+/** GET /owner/refund-problems: refunds that didn't go through, for the Bookings reminder. */
+export type RefundProblems = {
+  total: number;
+  /** Earliest and latest appointment among them, so "Show them" can cover them all. */
+  oldest: string | null;
+  newest: string | null;
 };
 
 /** POST /owner/bookings/:id/ask-reschedule: the reasons the owner picks from, or their own. */

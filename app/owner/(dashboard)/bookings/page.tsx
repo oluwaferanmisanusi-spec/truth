@@ -7,9 +7,10 @@ import { BookingStatusBadge } from "@/components/status-badge";
 import { buttonClass } from "@/components/ui";
 import { formatDay, formatNaira, formatTime, shopToday, SHOP_TIME_ZONE_LABEL } from "@/lib/format";
 import { Alert } from "@/components/alert";
-import type { OutcomesDue } from "@api/owner";
+import type { OutcomesDue, RefundProblems } from "@api/owner";
 import {
   getOutcomesDue,
+  getRefundProblems,
   listBookings,
   listFilterOptions,
   parseFilters,
@@ -17,6 +18,7 @@ import {
 } from "@/lib/owner/bookings";
 import { BookingFilters } from "./filters";
 import { CancelBookingButton } from "./cancel-button";
+import { MarkRefundedButton } from "./mark-refunded-button";
 
 export const metadata: Metadata = { title: "Bookings" };
 
@@ -39,13 +41,19 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
   await connection(); // "today" depends on the clock, so this renders per request
   const filters = parseFilters(await searchParams);
   const today = shopToday();
-  const [bookings, options, due] = await Promise.all([listBookings(filters), listFilterOptions(), getOutcomesDue()]);
+  const [bookings, options, due, refunds] = await Promise.all([
+    listBookings(filters),
+    listFilterOptions(),
+    getOutcomesDue(),
+    getRefundProblems(),
+  ]);
   const isFiltered = Boolean(
     filters.barber || filters.service || filters.status || filters.from !== today || filters.to !== today,
   );
 
   return (
     <>
+      {!showsAllRefunds(filters, refunds) && <RefundsReminder refunds={refunds} />}
       {!showsAllDue(filters, due, today) && <OutcomesReminder due={due} today={today} />}
       <div className="flex flex-col gap-4">
         <BookingFilters values={filters} today={today} options={options} isFiltered={isFiltered} />
@@ -56,14 +64,15 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
 
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <table className="w-full table-fixed border-collapse text-left">
+          {/* Customer takes what's left (it truncates), so the actions keep their room. */}
           <colgroup>
             <col className="w-40" />
-            <col className="w-54" />
-            <col className="w-44" />
-            <col className="w-41.5" />
+            <col />
+            <col className="w-40" />
+            <col className="w-36" />
             <col className="w-29" />
             <col className="w-36.5" />
-            <col />
+            <col className="w-40" />
           </colgroup>
           <thead className="bg-surface-muted text-caption font-medium text-ink-muted">
             <tr className="h-10 border-b border-border">
@@ -106,9 +115,18 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
                           Reschedule asked
                         </span>
                       )}
+                      {b.refundFailed && (
+                        <span className="inline-flex rounded-full bg-danger-tint px-2 py-1 text-caption font-medium whitespace-nowrap text-danger">
+                          Refund failed
+                        </span>
+                      )}
                     </span>
                   </td>
                   <td className="py-3 pr-5 pl-2 text-right">
+                    {b.refundFailed && (
+                      <MarkRefundedButton refundId={b.refundFailed.refundId} customerName={b.customerName}
+                        amount={formatNaira(b.refundFailed.amountKobo)} />
+                    )}
                     {b.cancellable && (
                       <CancelBookingButton
                         bookingId={b.id}
@@ -129,6 +147,31 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
         {bookings.length === 0 && <NoResults filters={filters} />}
       </div>
     </>
+  );
+}
+
+// Refunds that didn't go through (decided 2026-10-27): stays until each is refunded or marked
+// refunded, and steps aside while the list already shows them all.
+function showsAllRefunds(filters: Filters, refunds: RefundProblems) {
+  if (filters.status !== "refund_failed" || filters.barber || filters.service || !refunds.oldest || !refunds.newest) return false;
+  return filters.from <= shopToday(new Date(refunds.oldest)) && filters.to >= shopToday(new Date(refunds.newest));
+}
+
+function RefundsReminder({ refunds }: { refunds: RefundProblems }) {
+  if (refunds.total === 0 || !refunds.oldest || !refunds.newest) return null;
+  const href = `/owner/bookings?status=refund_failed&from=${shopToday(new Date(refunds.oldest))}&to=${shopToday(new Date(refunds.newest))}`;
+  const one = refunds.total === 1;
+  return (
+    <Alert variant="danger" role="alert" title={`${one ? "A refund" : `${refunds.total} refunds`} didn’t go through`}>
+      <p>
+        Paystack didn’t accept {one ? "it" : "them"}, so {one ? "the customer hasn’t" : "the customers haven’t"} been refunded
+        yet. We try again for a day. You can also refund from your Paystack dashboard, then choose “Mark as refunded” on
+        the booking.{" "}
+        <a href={href} className="font-medium text-primary underline underline-offset-2 hover:text-primary-hover">
+          Show {one ? "it" : "them"}
+        </a>
+      </p>
+    </Alert>
   );
 }
 

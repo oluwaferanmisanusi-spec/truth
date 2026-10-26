@@ -591,30 +591,48 @@ export type Database = {
       refunds: {
         Row: {
           amount_kobo: number;
+          attempts: number;
           created_at: string;
+          gave_up_at: string | null;
           id: string;
+          last_attempt_at: string | null;
+          last_error: string | null;
           payment_id: string;
           processed_at: string | null;
           provider_refund_id: string | null;
+          settled_by: string | null;
+          settled_by_hand_at: string | null;
           status: Database['public']['Enums']['refund_status'];
         };
         ComputedFields: never;
         Insert: {
           amount_kobo: number;
+          attempts?: number;
           created_at?: string;
+          gave_up_at?: string | null;
           id?: string;
+          last_attempt_at?: string | null;
+          last_error?: string | null;
           payment_id: string;
           processed_at?: string | null;
           provider_refund_id?: string | null;
+          settled_by?: string | null;
+          settled_by_hand_at?: string | null;
           status?: Database['public']['Enums']['refund_status'];
         };
         Update: {
           amount_kobo?: number;
+          attempts?: number;
           created_at?: string;
+          gave_up_at?: string | null;
           id?: string;
+          last_attempt_at?: string | null;
+          last_error?: string | null;
           payment_id?: string;
           processed_at?: string | null;
           provider_refund_id?: string | null;
+          settled_by?: string | null;
+          settled_by_hand_at?: string | null;
           status?: Database['public']['Enums']['refund_status'];
         };
         Relationships: [
@@ -623,6 +641,13 @@ export type Database = {
             columns: ['payment_id'];
             isOneToOne: false;
             referencedRelation: 'payments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'refunds_settled_by_fkey';
+            columns: ['settled_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
         ];
@@ -1045,11 +1070,17 @@ export type Database = {
         Args: { p_booking_id: string };
         Returns: {
           amount_kobo: number;
+          attempts: number;
           created_at: string;
+          gave_up_at: string | null;
           id: string;
+          last_attempt_at: string | null;
+          last_error: string | null;
           payment_id: string;
           processed_at: string | null;
           provider_refund_id: string | null;
+          settled_by: string | null;
+          settled_by_hand_at: string | null;
           status: Database['public']['Enums']['refund_status'];
         };
         SetofOptions: {
@@ -1121,11 +1152,17 @@ export type Database = {
         Args: { p_booking_id: string };
         Returns: {
           amount_kobo: number;
+          attempts: number;
           created_at: string;
+          gave_up_at: string | null;
           id: string;
+          last_attempt_at: string | null;
+          last_error: string | null;
           payment_id: string;
           processed_at: string | null;
           provider_refund_id: string | null;
+          settled_by: string | null;
+          settled_by_hand_at: string | null;
           status: Database['public']['Enums']['refund_status'];
         };
         SetofOptions: {

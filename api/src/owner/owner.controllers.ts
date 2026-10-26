@@ -36,6 +36,7 @@ import type {
   OwnerBooking,
   OwnerService,
   OwnerServiceDetail,
+  RefundProblems,
   RescheduleAsked,
   ShopSettings,
   Stats,
@@ -68,6 +69,7 @@ const BookingQuery = z.object({
       'no_show',
       'cancelled',
       'needs_outcome',
+      'refund_failed',
     ])
     .optional(),
 });
@@ -105,6 +107,17 @@ export class OwnerBookingsController {
   @Get('booking-filters')
   filters(): Promise<BookingFilterOptions> {
     return this.bookings.filterOptions();
+  }
+
+  @Get('refund-problems')
+  refundProblems(): Promise<RefundProblems> {
+    return this.bookings.refundProblems();
+  }
+
+  @Post('refunds/:id/mark-refunded')
+  @HttpCode(200)
+  markRefunded(@Param('id', { schema: Id }) id: string, @CurrentUser() me: Me) {
+    return this.bookings.markRefunded(id, me.id);
   }
 
   @Post('bookings/:id/cancel')

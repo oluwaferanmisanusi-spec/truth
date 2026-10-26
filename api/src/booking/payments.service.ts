@@ -23,6 +23,13 @@ const STILL_PROCESSING = new Set([
 
 export type PaymentResult = 'confirmed' | 'failed' | 'refunded' | 'waiting';
 
+/**
+ * A refund Paystack won't take is tried this many times in all, at least REFUND_RETRY_GAP
+ * apart (about a day), then left for the owner (decided 2026-10-27).
+ */
+export const REFUND_TRIES = 4;
+export const REFUND_RETRY_GAP_MS = 6 * 60 * 60 * 1000;
+
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
@@ -98,12 +105,17 @@ export class PaymentsService {
     const db = this.supabase.admin;
     const { data: claimed } = await db
       .from('refunds')
-      .update({ provider_refund_id: 'sending' })
+      .update({
+        provider_refund_id: 'sending',
+        last_attempt_at: new Date().toISOString(),
+      })
       .eq('id', refundId)
       .is('provider_refund_id', null)
-      .select('amount_kobo, payments(reference)')
+      .in('status', ['pending', 'failed']) // not one the owner marked as refunded
+      .select('amount_kobo, attempts, payments(reference)')
       .maybeSingle();
     if (!claimed?.payments) return 'already';
+    const attempts = claimed.attempts + 1;
 
     try {
       const result = await this.paystack.createRefund(
@@ -117,6 +129,8 @@ export class PaymentsService {
           status: result.status === 'processed' ? 'processed' : 'pending',
           processed_at:
             result.status === 'processed' ? new Date().toISOString() : null,
+          attempts,
+          last_error: null,
         })
         .eq('id', refundId);
       return 'sent';
@@ -124,13 +138,24 @@ export class PaymentsService {
       this.logger.error('Refund not sent', error);
       await db
         .from('refunds')
-        .update({ provider_refund_id: null, status: 'failed' })
+        .update({
+          provider_refund_id: null,
+          status: 'failed',
+          attempts,
+          last_error: (error instanceof Error
+            ? error.message
+            : 'Unknown'
+          ).slice(0, 300),
+        })
         .eq('id', refundId);
       return 'failed';
     }
   }
 
-  /** Paystack's refund.processed / refund.failed webhook events. */
+  /**
+   * Paystack's refund.processed / refund.failed webhook events. A failed one goes back in
+   * the queue (no Paystack id), so the hourly job tries it again.
+   */
   async markRefund(paymentReference: string, status: 'processed' | 'failed') {
     const db = this.supabase.admin;
     const { data: payment } = await db
@@ -141,10 +166,15 @@ export class PaymentsService {
     if (!payment) return;
     await db
       .from('refunds')
-      .update({
-        status,
-        processed_at: status === 'processed' ? new Date().toISOString() : null,
-      })
+      .update(
+        status === 'processed'
+          ? { status, processed_at: new Date().toISOString() }
+          : {
+              status,
+              provider_refund_id: null,
+              last_error: 'Paystack couldn’t complete the refund.',
+            },
+      )
       .eq('payment_id', payment.id)
       .eq('status', 'pending');
   }

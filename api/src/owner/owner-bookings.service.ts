@@ -10,6 +10,7 @@ import type {
   BookingStatus,
   OutcomesDue,
   OwnerBooking,
+  RefundProblems,
   RescheduleAsked,
   RescheduleReason,
   Stats,
@@ -29,8 +30,11 @@ export type BookingFilters = {
   to: string;
   barber?: string;
   service?: string;
-  /** needs_outcome: confirmed appointments that have started with no outcome recorded. */
-  status?: BookingStatus | 'needs_outcome';
+  /**
+   * needs_outcome: confirmed appointments that have started with no outcome recorded.
+   * refund_failed: a refund owed on it didn't go through (includes refunded late payments).
+   */
+  status?: BookingStatus | 'needs_outcome' | 'refund_failed';
 };
 
 @Injectable()
@@ -46,41 +50,113 @@ export class OwnerBookingsService {
     let query = this.supabase.admin
       .from('bookings')
       .select(
-        'id, reference, starts_at, customer_name, customer_email, service_name, price_kobo, status, reschedule_requested_at, barbers!bookings_barber_id_fkey(full_name)',
+        'id, reference, starts_at, customer_name, customer_email, service_name, price_kobo, status, reschedule_requested_at, barbers!bookings_barber_id_fkey(full_name), payments(refunds(id, status, amount_kobo, gave_up_at, settled_by_hand_at))',
       )
       .gte('starts_at', shopDayStart(filters.from))
       .lt('starts_at', shopDayStart(addDays(filters.to, 1)))
-      .neq('status', 'expired')
       .is('reschedule_of', null) // a customer's held new time, not a booking of its own
       .order('starts_at')
       .order('customer_name')
       .limit(1000);
     if (filters.barber) query = query.eq('barber_id', filters.barber);
     if (filters.service) query = query.eq('service_id', filters.service);
+    if (filters.status === 'refund_failed')
+      // A late payment that was refunded sits on an expired hold, so this one shows those too.
+      query = query.in('id', await this.refundProblemBookingIds());
+    else query = query.neq('status', 'expired');
     if (filters.status === 'needs_outcome')
       query = query
         .eq('status', 'confirmed')
         .lte('starts_at', new Date().toISOString());
-    else if (filters.status) query = query.eq('status', filters.status);
+    else if (filters.status && filters.status !== 'refund_failed')
+      query = query.eq('status', filters.status);
 
     const { data, error } = await query;
     if (error) throw error;
     const now = Date.now();
-    return data.map((b) => ({
-      id: b.id,
-      reference: b.reference,
-      startsAt: b.starts_at,
-      customerName: b.customer_name,
-      customerEmail: b.customer_email,
-      serviceName: b.service_name,
-      priceKobo: b.price_kobo,
-      status: b.status,
-      barberName: b.barbers?.full_name ?? '',
-      // Owners can cancel confirmed bookings that haven't started (the database re-checks this).
-      cancellable: b.status === 'confirmed' && Date.parse(b.starts_at) > now,
-      rescheduleAsked:
-        b.status === 'confirmed' && b.reschedule_requested_at !== null,
-    }));
+    return data.map((b) => {
+      const failed = b.payments
+        .flatMap((p) => p.refunds)
+        .find((r) => r.status === 'failed' && !r.settled_by_hand_at);
+      return {
+        id: b.id,
+        reference: b.reference,
+        startsAt: b.starts_at,
+        customerName: b.customer_name,
+        customerEmail: b.customer_email,
+        serviceName: b.service_name,
+        priceKobo: b.price_kobo,
+        status: b.status,
+        barberName: b.barbers?.full_name ?? '',
+        // Owners can cancel confirmed bookings that haven't started (the database re-checks this).
+        cancellable: b.status === 'confirmed' && Date.parse(b.starts_at) > now,
+        rescheduleAsked:
+          b.status === 'confirmed' && b.reschedule_requested_at !== null,
+        refundFailed: failed
+          ? {
+              refundId: failed.id,
+              amountKobo: failed.amount_kobo,
+              givenUp: failed.gave_up_at !== null,
+            }
+          : null,
+      };
+    });
+  }
+
+  /** Bookings with a refund that didn't go through and nobody has sorted out by hand. */
+  private async refundProblemBookingIds() {
+    const { data, error } = await this.supabase.admin
+      .from('refunds')
+      .select('payments!inner(booking_id)')
+      .eq('status', 'failed')
+      .is('settled_by_hand_at', null);
+    if (error) throw error;
+    return data.map((r) => r.payments.booking_id);
+  }
+
+  /** The Bookings reminder for refunds that didn't go through (decided 2026-10-27). */
+  async refundProblems(): Promise<RefundProblems> {
+    const { data, error } = await this.supabase.admin
+      .from('refunds')
+      .select('payments!inner(bookings!inner(starts_at))')
+      .eq('status', 'failed')
+      .is('settled_by_hand_at', null);
+    if (error) throw error;
+    const starts = data.map((r) => r.payments.bookings.starts_at).sort();
+    return {
+      total: starts.length,
+      oldest: starts[0] ?? null,
+      newest: starts.at(-1) ?? null,
+    };
+  }
+
+  /**
+   * The owner or a manager refunded it in Paystack themselves: record it, and stop the
+   * automatic retries. Not while a send is under way.
+   */
+  async markRefunded(refundId: string, by: string) {
+    const now = new Date().toISOString();
+    const { data, error } = await this.supabase.admin
+      .from('refunds')
+      .update({
+        status: 'processed',
+        processed_at: now,
+        settled_by_hand_at: now,
+        settled_by: by,
+      })
+      .eq('id', refundId)
+      .eq('status', 'failed')
+      .is('provider_refund_id', null)
+      .select('id');
+    if (error) throw error;
+    if (!data.length) {
+      throw new ConflictException({
+        message:
+          'This refund has changed since you opened the page: it may have gone through. Refresh to see.',
+        code: 'refund_changed',
+      });
+    }
+    return {};
   }
 
   /** The owner's reminder to chase barbers for outcomes they haven't recorded. */
