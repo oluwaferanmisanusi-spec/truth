@@ -157,14 +157,14 @@ isOneToOne: false
                   ]
                 },"bookings": {
                   Row: {
-                    "any_barber": boolean,"barber_id": string,"buffer_minutes": number,"busy_until": string,"cancelled_at": string | null,"cancelled_by": Database["public"]['Enums']["cancelled_by"] | null,"created_at": string,"customer_email": string,"customer_id": string | null,"customer_name": string,"duration_minutes": number,"ends_at": string,"guest_token_hash": string | null,"hold_expires_at": string | null,"id": string,"outcome_recorded_at": string | null,"outcome_recorded_by": string | null,"price_kobo": number,"reference": string,"refund_due": boolean | null,"reschedule_of": string | null,"service_id": string,"service_name": string,"starts_at": string,"status": Database["public"]['Enums']["booking_status"],"updated_at": string
+                    "any_barber": boolean,"barber_id": string,"buffer_minutes": number,"busy_until": string,"cancelled_at": string | null,"cancelled_by": Database["public"]['Enums']["cancelled_by"] | null,"created_at": string,"customer_email": string,"customer_id": string | null,"customer_name": string,"duration_minutes": number,"ends_at": string,"guest_token_hash": string | null,"hold_expires_at": string | null,"id": string,"outcome_recorded_at": string | null,"outcome_recorded_by": string | null,"price_kobo": number,"reference": string,"refund_due": boolean | null,"request_token_hash": string | null,"reschedule_of": string | null,"reschedule_reason": string | null,"reschedule_requested_at": string | null,"service_id": string,"service_name": string,"starts_at": string,"status": Database["public"]['Enums']["booking_status"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "any_barber"?: boolean,"barber_id": string,"buffer_minutes"?: number,"busy_until": string,"cancelled_at"?: string | null,"cancelled_by"?: Database["public"]['Enums']["cancelled_by"] | null,"created_at"?: string,"customer_email": string,"customer_id"?: string | null,"customer_name": string,"duration_minutes": number,"ends_at": string,"guest_token_hash"?: string | null,"hold_expires_at"?: string | null,"id"?: string,"outcome_recorded_at"?: string | null,"outcome_recorded_by"?: string | null,"price_kobo": number,"reference"?: string,"refund_due"?: boolean | null,"reschedule_of"?: string | null,"service_id": string,"service_name": string,"starts_at": string,"status"?: Database["public"]['Enums']["booking_status"],"updated_at"?: string
+                    "any_barber"?: boolean,"barber_id": string,"buffer_minutes"?: number,"busy_until": string,"cancelled_at"?: string | null,"cancelled_by"?: Database["public"]['Enums']["cancelled_by"] | null,"created_at"?: string,"customer_email": string,"customer_id"?: string | null,"customer_name": string,"duration_minutes": number,"ends_at": string,"guest_token_hash"?: string | null,"hold_expires_at"?: string | null,"id"?: string,"outcome_recorded_at"?: string | null,"outcome_recorded_by"?: string | null,"price_kobo": number,"reference"?: string,"refund_due"?: boolean | null,"request_token_hash"?: string | null,"reschedule_of"?: string | null,"reschedule_reason"?: string | null,"reschedule_requested_at"?: string | null,"service_id": string,"service_name": string,"starts_at": string,"status"?: Database["public"]['Enums']["booking_status"],"updated_at"?: string
                   }
                   Update: {
-                    "any_barber"?: boolean,"barber_id"?: string,"buffer_minutes"?: number,"busy_until"?: string,"cancelled_at"?: string | null,"cancelled_by"?: Database["public"]['Enums']["cancelled_by"] | null,"created_at"?: string,"customer_email"?: string,"customer_id"?: string | null,"customer_name"?: string,"duration_minutes"?: number,"ends_at"?: string,"guest_token_hash"?: string | null,"hold_expires_at"?: string | null,"id"?: string,"outcome_recorded_at"?: string | null,"outcome_recorded_by"?: string | null,"price_kobo"?: number,"reference"?: string,"refund_due"?: boolean | null,"reschedule_of"?: string | null,"service_id"?: string,"service_name"?: string,"starts_at"?: string,"status"?: Database["public"]['Enums']["booking_status"],"updated_at"?: string
+                    "any_barber"?: boolean,"barber_id"?: string,"buffer_minutes"?: number,"busy_until"?: string,"cancelled_at"?: string | null,"cancelled_by"?: Database["public"]['Enums']["cancelled_by"] | null,"created_at"?: string,"customer_email"?: string,"customer_id"?: string | null,"customer_name"?: string,"duration_minutes"?: number,"ends_at"?: string,"guest_token_hash"?: string | null,"hold_expires_at"?: string | null,"id"?: string,"outcome_recorded_at"?: string | null,"outcome_recorded_by"?: string | null,"price_kobo"?: number,"reference"?: string,"refund_due"?: boolean | null,"request_token_hash"?: string | null,"reschedule_of"?: string | null,"reschedule_reason"?: string | null,"reschedule_requested_at"?: string | null,"service_id"?: string,"service_name"?: string,"starts_at"?: string,"status"?: Database["public"]['Enums']["booking_status"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -485,7 +485,10 @@ isOneToOne: false
 "price_kobo": number,
 "reference": string,
 "refund_due": boolean | null,
+"request_token_hash": string | null,
 "reschedule_of": string | null,
+"reschedule_reason": string | null,
+"reschedule_requested_at": string | null,
 "service_id": string,
 "service_name": string,
 "starts_at": string,
@@ -526,7 +529,10 @@ isOneToOne: false
 "price_kobo": number,
 "reference": string,
 "refund_due": boolean | null,
+"request_token_hash": string | null,
 "reschedule_of": string | null,
+"reschedule_reason": string | null,
+"reschedule_requested_at": string | null,
 "service_id": string,
 "service_name": string,
 "starts_at": string,
@@ -561,7 +567,10 @@ isOneToOne: false
 "price_kobo": number,
 "reference": string,
 "refund_due": boolean | null,
+"request_token_hash": string | null,
 "reschedule_of": string | null,
+"reschedule_reason": string | null,
+"reschedule_requested_at": string | null,
 "service_id": string,
 "service_name": string,
 "starts_at": string,
@@ -630,7 +639,10 @@ isOneToOne: false
 "price_kobo": number,
 "reference": string,
 "refund_due": boolean | null,
+"request_token_hash": string | null,
 "reschedule_of": string | null,
+"reschedule_reason": string | null,
+"reschedule_requested_at": string | null,
 "service_id": string,
 "service_name": string,
 "starts_at": string,

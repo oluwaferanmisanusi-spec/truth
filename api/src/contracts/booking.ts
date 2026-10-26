@@ -65,8 +65,8 @@ export type ManagedBooking = {
   reference: string;
   status: 'confirmed' | 'completed' | 'no_show' | 'cancelled';
   /**
-   * free: far enough ahead to cancel with a refund or reschedule; late: too close for
-   * that; started: its time has come; otherwise the status.
+   * free: far enough ahead to cancel with a refund or reschedule (or the shop asked them to
+   * move it); late: too close for that; started: its time has come; otherwise the status.
    */
   phase: 'free' | 'late' | 'started' | 'completed' | 'no_show' | 'cancelled';
   serviceId: string;
@@ -89,6 +89,11 @@ export type ManagedBooking = {
   } | null;
   /** Last moment to cancel with a refund or reschedule. */
   freeUntil: string;
+  /**
+   * The shop asked them to move it ("Ask to reschedule", 2026-10-26), with the reason it
+   * gave. Until the appointment, moving is free and cancelling refunds in full.
+   */
+  shopAsked: { reason: string } | null;
 };
 
 /** GET /me/bookings: upcoming soonest first, past latest first. */

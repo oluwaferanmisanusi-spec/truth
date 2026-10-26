@@ -99,7 +99,14 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
                   <td className="px-2 py-3">{barberName}</td>
                   <td className="px-2 py-3 text-right font-medium tabular-nums">{formatNaira(b.priceKobo)}</td>
                   <td className="px-2 py-3">
-                    <BookingStatusBadge status={b.status} />
+                    <span className="flex flex-col items-start gap-1">
+                      <BookingStatusBadge status={b.status} />
+                      {b.rescheduleAsked && (
+                        <span className="inline-flex rounded-full bg-warning-tint px-2 py-1 text-caption font-medium whitespace-nowrap text-warning">
+                          Reschedule asked
+                        </span>
+                      )}
+                    </span>
                   </td>
                   <td className="py-3 pr-5 pl-2 text-right">
                     {b.cancellable && (

@@ -32,7 +32,7 @@ export type Access =
 
 const HOUR = 60 * 60 * 1000;
 const SELECT =
-  'id, reference, status, service_id, service_name, duration_minutes, price_kobo, starts_at, barber_id, any_barber, customer_name, customer_email, cancelled_at, cancelled_by, refund_due, barbers!bookings_barber_id_fkey(full_name), payments(status, refunds(status, amount_kobo))';
+  'id, reference, status, service_id, service_name, duration_minutes, price_kobo, starts_at, barber_id, any_barber, customer_name, customer_email, cancelled_at, cancelled_by, refund_due, reschedule_requested_at, reschedule_reason, barbers!bookings_barber_id_fkey(full_name), payments(status, refunds(status, amount_kobo))';
 
 const notMovable = () =>
   new ConflictException({
@@ -94,7 +94,10 @@ export class ManageService {
     query =
       access.kind === 'account'
         ? query.eq('id', access.bookingId).eq('customer_id', access.customerId)
-        : query.eq('guest_token_hash', hashToken(access.token));
+        : // The confirmation email's link, or the shop's "please move it" link.
+          query.or(
+            `guest_token_hash.eq.${hashToken(access.token)},request_token_hash.eq.${hashToken(access.token)}`,
+          );
     const [{ data, error }, settings] = await Promise.all([
       query.maybeSingle(),
       db.from('shop_settings').select('refund_window_hours').single(),
@@ -117,6 +120,11 @@ export class ManageService {
       });
     }
     const windowMs = settings.data.refund_window_hours * HOUR;
+    // The shop asked them to move it: free to move or cancel until it starts.
+    const shopAsked =
+      data.status === 'confirmed' && data.reschedule_requested_at
+        ? { reason: data.reschedule_reason ?? '' }
+        : null;
     const refund =
       data.payments
         .flatMap((p) => p.refunds)
@@ -128,7 +136,7 @@ export class ManageService {
       phase:
         data.status !== 'confirmed'
           ? data.status
-          : msLeft >= windowMs
+          : msLeft >= windowMs || (shopAsked && msLeft > 0)
             ? 'free'
             : msLeft > 0
               ? 'late'
@@ -150,7 +158,10 @@ export class ManageService {
         status: refund.status,
         amountKobo: refund.amount_kobo,
       },
-      freeUntil: new Date(Date.parse(data.starts_at) - windowMs).toISOString(),
+      freeUntil: shopAsked
+        ? data.starts_at
+        : new Date(Date.parse(data.starts_at) - windowMs).toISOString(),
+      shopAsked,
     };
   }
 

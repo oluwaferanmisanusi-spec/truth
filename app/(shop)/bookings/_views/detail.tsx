@@ -36,8 +36,8 @@ async function Detail({ m }: { m: Managed }) {
           <div className="flex flex-col gap-2">
             <h1 className="text-h1">Your booking</h1>
             <p className="text-small text-ink-muted">
-              You opened this from your confirmation email. Anyone with the link can manage this booking, so don’t
-              share it.
+              You opened this from {b.shopAsked ? "the shop’s email" : "your confirmation email"}. Anyone with the link
+              can manage this booking, so don’t share it.
             </p>
           </div>
         )}
@@ -55,15 +55,27 @@ async function Detail({ m }: { m: Managed }) {
 
         {b.phase === "free" && (
           <>
-            <Alert variant="info" title={`Free cancellation until ${formatDay(b.freeUntil)}, ${formatTime(b.freeUntil)}`}>
-              Until then you can cancel for a full refund or move to another time. After that, there’s no refund and
-              you can’t reschedule. If you’re more than {words.grace} late, it counts as a no-show and isn’t refunded.
-            </Alert>
+            {b.shopAsked ? (
+              // The shop's "Ask to reschedule" (2026-10-26): free to move or cancel until it starts.
+              <Alert variant="warning" title="The shop has asked you to move this booking">
+                <p>{b.shopAsked.reason}</p>
+                <p className="mt-2">
+                  Please choose a new time. Moving it is free. If no other time suits you, you can cancel for a full
+                  refund of {price} instead, any time before your appointment.
+                </p>
+              </Alert>
+            ) : (
+              <Alert variant="info" title={`Free cancellation until ${formatDay(b.freeUntil)}, ${formatTime(b.freeUntil)}`}>
+                Until then you can cancel for a full refund or move to another time. After that, there’s no refund and
+                you can’t reschedule. If you’re more than {words.grace} late, it counts as a no-show and isn’t refunded.
+              </Alert>
+            )}
             <div className="flex flex-col gap-2">
-              <Link href={`${m.base}/reschedule`} className={`${buttonClass.secondary} w-full`}>
-                Reschedule
+              <Link href={`${m.base}/reschedule`} className={`${b.shopAsked ? buttonClass.primary : buttonClass.secondary} w-full`}>
+                {b.shopAsked ? "Choose a new time" : "Reschedule"}
               </Link>
-              <CancelButton action={cancelBooking.bind(null, accessKey(m.access))} refund amount={price} refundWindow={words.refundWindow} />
+              <CancelButton action={cancelBooking.bind(null, accessKey(m.access))} refund amount={price} refundWindow={words.refundWindow}
+                shopAsked={Boolean(b.shopAsked)} />
             </div>
           </>
         )}

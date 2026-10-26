@@ -279,7 +279,10 @@ export type Database = {
           price_kobo: number;
           reference: string;
           refund_due: boolean | null;
+          request_token_hash: string | null;
           reschedule_of: string | null;
+          reschedule_reason: string | null;
+          reschedule_requested_at: string | null;
           service_id: string;
           service_name: string;
           starts_at: string;
@@ -308,7 +311,10 @@ export type Database = {
           price_kobo: number;
           reference?: string;
           refund_due?: boolean | null;
+          request_token_hash?: string | null;
           reschedule_of?: string | null;
+          reschedule_reason?: string | null;
+          reschedule_requested_at?: string | null;
           service_id: string;
           service_name: string;
           starts_at: string;
@@ -336,7 +342,10 @@ export type Database = {
           price_kobo?: number;
           reference?: string;
           refund_due?: boolean | null;
+          request_token_hash?: string | null;
           reschedule_of?: string | null;
+          reschedule_reason?: string | null;
+          reschedule_requested_at?: string | null;
           service_id?: string;
           service_name?: string;
           starts_at?: string;
@@ -913,7 +922,10 @@ export type Database = {
           price_kobo: number;
           reference: string;
           refund_due: boolean | null;
+          request_token_hash: string | null;
           reschedule_of: string | null;
+          reschedule_reason: string | null;
+          reschedule_requested_at: string | null;
           service_id: string;
           service_name: string;
           starts_at: string;
@@ -971,7 +983,10 @@ export type Database = {
           price_kobo: number;
           reference: string;
           refund_due: boolean | null;
+          request_token_hash: string | null;
           reschedule_of: string | null;
+          reschedule_reason: string | null;
+          reschedule_requested_at: string | null;
           service_id: string;
           service_name: string;
           starts_at: string;
@@ -1008,7 +1023,10 @@ export type Database = {
           price_kobo: number;
           reference: string;
           refund_due: boolean | null;
+          request_token_hash: string | null;
           reschedule_of: string | null;
+          reschedule_reason: string | null;
+          reschedule_requested_at: string | null;
           service_id: string;
           service_name: string;
           starts_at: string;
@@ -1075,7 +1093,10 @@ export type Database = {
           price_kobo: number;
           reference: string;
           refund_due: boolean | null;
+          request_token_hash: string | null;
           reschedule_of: string | null;
+          reschedule_reason: string | null;
+          reschedule_requested_at: string | null;
           service_id: string;
           service_name: string;
           starts_at: string;

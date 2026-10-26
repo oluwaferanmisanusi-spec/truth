@@ -121,6 +121,30 @@ export function bookingMovedEmail(
   );
 }
 
+/** The shop's "Ask to reschedule": the reason, and a link to move or cancel for a full refund. */
+export function rescheduleRequestEmail(
+  b: EmailBooking,
+  reason: string,
+  manageUrl: string,
+) {
+  return build(
+    b.customer_email,
+    `Please choose a new time for your booking on ${formatDay(b.starts_at)}`,
+    [
+      `Hi ${firstName(b.customer_name)}, we’re sorry: Truth needs to ask you to move your booking.`,
+      reason,
+      `Use the link below to choose a new time. Moving it is free, even close to your appointment. If no other time suits you, you can cancel there instead for a full refund of ${formatNaira(b.price_kobo)}.`,
+    ],
+    [
+      ['Service', `${b.service_name}, ${b.duration_minutes} min`],
+      ['Barber', b.barber_name],
+      ['Date and time', when(b)],
+      ['Reference', b.reference],
+    ],
+    { label: 'Choose a new time', url: manageUrl },
+  );
+}
+
 export function cancelledByShopEmail(b: EmailBooking, bookAgainUrl: string) {
   return build(
     b.customer_email,

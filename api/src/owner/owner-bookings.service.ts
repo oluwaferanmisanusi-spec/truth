@@ -1,18 +1,28 @@
 // The owner's Bookings screen (Figma 5.1, 5.2) and Stats (5.4).
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { addDays, shopDayStart } from '../common/format.js';
 import type {
   BookingFilterOptions,
   BookingStatus,
   OutcomesDue,
   OwnerBooking,
+  RescheduleAsked,
+  RescheduleReason,
   Stats,
 } from '../contracts/owner.js';
 import { EmailService } from '../email/email.service.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
-import { cancelledByShopEmail } from '../booking/booking-emails.js';
+import {
+  cancelledByShopEmail,
+  rescheduleRequestEmail,
+} from '../booking/booking-emails.js';
 import { PaymentsService } from '../booking/payments.service.js';
 import { SiteService } from '../common/site.service.js';
+import { newToken } from '../common/tokens.js';
 
 export type BookingFilters = {
   from: string;
@@ -36,7 +46,7 @@ export class OwnerBookingsService {
     let query = this.supabase.admin
       .from('bookings')
       .select(
-        'id, reference, starts_at, customer_name, customer_email, service_name, price_kobo, status, barbers!bookings_barber_id_fkey(full_name)',
+        'id, reference, starts_at, customer_name, customer_email, service_name, price_kobo, status, reschedule_requested_at, barbers!bookings_barber_id_fkey(full_name)',
       )
       .gte('starts_at', shopDayStart(filters.from))
       .lt('starts_at', shopDayStart(addDays(filters.to, 1)))
@@ -68,6 +78,8 @@ export class OwnerBookingsService {
       barberName: b.barbers?.full_name ?? '',
       // Owners can cancel confirmed bookings that haven't started (the database re-checks this).
       cancellable: b.status === 'confirmed' && Date.parse(b.starts_at) > now,
+      rescheduleAsked:
+        b.status === 'confirmed' && b.reschedule_requested_at !== null,
     }));
   }
 
@@ -143,6 +155,66 @@ export class OwnerBookingsService {
     const booking = await this.payments.emailBooking({ id: bookingId });
     await this.email.send(cancelledByShopEmail(booking, this.site.url('/')));
     return { refundFailed: !refundSent };
+  }
+
+  /**
+   * "Ask to reschedule" (2026-10-26): instead of cancelling, ask the customer to move the
+   * booking. Saves the reason and emails them a link; until the appointment they can move it
+   * for free or cancel for a full refund (the database lifts the 24-hour rule). Asking again
+   * replaces the reason and sends a fresh link.
+   */
+  async askToReschedule(
+    bookingId: string,
+    reason: RescheduleReason,
+    note?: string,
+  ): Promise<RescheduleAsked> {
+    const db = this.supabase.admin;
+    const { data: booking } = await db
+      .from('bookings')
+      .select('barbers!bookings_barber_id_fkey(full_name)')
+      .eq('id', bookingId)
+      .is('reschedule_of', null)
+      .maybeSingle();
+    if (!booking) throw new NotFoundException('Booking not found');
+    const barber = booking.barbers?.full_name?.split(' ')[0] ?? 'Your barber';
+    const text =
+      reason === 'shop_closed'
+        ? 'The shop will be closed on that day.'
+        : reason === 'barber_unavailable'
+          ? `${barber} won’t be available at that time.`
+          : note!;
+
+    const { token, hash } = newToken();
+    const now = new Date().toISOString();
+    const { data, error } = await db
+      .from('bookings')
+      .update({
+        reschedule_requested_at: now,
+        reschedule_reason: text,
+        request_token_hash: hash,
+        updated_at: now,
+      })
+      .eq('id', bookingId)
+      .eq('status', 'confirmed')
+      .gt('starts_at', now)
+      .select('id');
+    if (error) throw error;
+    if (!data.length) {
+      throw new ConflictException({
+        message:
+          'This booking can no longer be moved. It may have started or already been cancelled.',
+        code: 'not_movable',
+      });
+    }
+    const emailBooking = await this.payments.emailBooking({ id: bookingId });
+    const emailed = await this.email.send(
+      rescheduleRequestEmail(
+        emailBooking,
+        text,
+        this.site.guestBookingUrl(token),
+      ),
+    );
+    return { email: emailBooking.customer_email, emailed };
   }
 
   /** Stats (5.4) for shop-local days from…to inclusive. */

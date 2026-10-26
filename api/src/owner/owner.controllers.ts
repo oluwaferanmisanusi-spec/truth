@@ -36,6 +36,7 @@ import type {
   OwnerBooking,
   OwnerService,
   OwnerServiceDetail,
+  RescheduleAsked,
   ShopSettings,
   Stats,
   Team,
@@ -73,6 +74,17 @@ const BookingQuery = z.object({
 
 const Active = z.object({ active: z.boolean() });
 
+/** "Other" needs the owner's own words; the ready-made reasons don't. */
+const AskReschedule = z
+  .object({
+    reason: z.enum(['shop_closed', 'barber_unavailable', 'other']),
+    note: z.string().trim().max(300).optional(),
+  })
+  .refine((b) => b.reason !== 'other' || b.note, {
+    message: 'Tell the customer why.',
+    path: ['note'],
+  });
+
 @Roles('owner', 'manager')
 @Controller('owner')
 export class OwnerBookingsController {
@@ -99,6 +111,15 @@ export class OwnerBookingsController {
   @HttpCode(200)
   cancel(@Param('id', { schema: Id }) id: string) {
     return this.bookings.cancel(id);
+  }
+
+  @Post('bookings/:id/ask-reschedule')
+  @HttpCode(200)
+  askToReschedule(
+    @Param('id', { schema: Id }) id: string,
+    @Body({ schema: AskReschedule }) body: z.output<typeof AskReschedule>,
+  ): Promise<RescheduleAsked> {
+    return this.bookings.askToReschedule(id, body.reason, body.note);
   }
 
   @Get('stats')

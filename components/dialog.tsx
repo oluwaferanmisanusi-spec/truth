@@ -11,9 +11,11 @@ type DialogProps = {
   children: ReactNode;
   /** Buttons, right-aligned; put the primary action last. */
   actions: ReactNode;
+  /** 600px instead of 480px, for three buttons in a row. */
+  wide?: boolean;
 };
 
-export function Dialog({ open, onClose, title, children, actions }: DialogProps) {
+export function Dialog({ open, onClose, title, children, actions, wide }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -32,7 +34,7 @@ export function Dialog({ open, onClose, title, children, actions }: DialogProps)
         if (e.target === ref.current) onClose(); // click on the scrim
       }}
       aria-labelledby={titleId}
-      className="m-auto w-120 max-w-[calc(100vw-2rem)] rounded-lg bg-surface p-0 text-left text-ink shadow-modal backdrop:bg-ink/45"
+      className={`m-auto ${wide ? "w-150" : "w-120"} max-w-[calc(100vw-2rem)] rounded-lg bg-surface p-0 text-left text-ink shadow-modal backdrop:bg-ink/45`}
     >
       <div className="flex flex-col gap-4 p-6">
         <h2 id={titleId} className="text-h2 font-semibold">

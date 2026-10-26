@@ -21,7 +21,14 @@ export type OwnerBooking = {
   barberName: string;
   /** Confirmed and not started yet. */
   cancellable: boolean;
+  /** The shop asked the customer to move it and they haven't yet. */
+  rescheduleAsked: boolean;
 };
+
+/** POST /owner/bookings/:id/ask-reschedule: the reasons the owner picks from, or their own. */
+export type RescheduleReason = 'shop_closed' | 'barber_unavailable' | 'other';
+
+export type RescheduleAsked = { email: string; emailed: boolean };
 
 export type Option = { value: string; label: string };
 

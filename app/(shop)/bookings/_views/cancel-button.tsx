@@ -5,10 +5,10 @@ import { useState, useTransition } from "react";
 import { Sheet } from "@/components/shop/sheet";
 import { buttonClass } from "@/components/ui";
 
-/** refundWindow: the shop's rule in words, e.g. "24 hours". */
-type Props = { action: () => Promise<void>; refund: boolean; amount: string; refundWindow: string };
+/** refundWindow: the shop's rule in words, e.g. "24 hours". shopAsked: the shop asked them to move it. */
+type Props = { action: () => Promise<void>; refund: boolean; amount: string; refundWindow: string; shopAsked?: boolean };
 
-export function CancelButton({ action, refund, amount, refundWindow }: Props) {
+export function CancelButton({ action, refund, amount, refundWindow, shopAsked }: Props) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   return (
@@ -32,7 +32,9 @@ export function CancelButton({ action, refund, amount, refundWindow }: Props) {
           </>
         }
       >
-        {refund
+        {shopAsked
+          ? `The shop asked you to move this booking, so you’ll get a full refund of ${amount} to the card you paid with.`
+          : refund
           ? `You’re cancelling more than ${refundWindow} before your appointment, so you’ll get a full refund of ${amount} to the card you paid with.`
           : `Your appointment is in less than ${refundWindow}, so the ${amount} you paid won’t be refunded. This can’t be undone.`}
       </Sheet>
