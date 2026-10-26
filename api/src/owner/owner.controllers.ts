@@ -14,7 +14,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { CurrentUser, Public, Roles, SkipTwoStep } from '../auth/decorators.js';
+import { CurrentUser, Public, Roles } from '../auth/decorators.js';
 import { perHour, RateLimit } from '../auth/rate-limit.js';
 import { shopToday } from '../common/format.js';
 import {
@@ -27,7 +27,6 @@ import {
 } from '../config/validation.js';
 import type { Me } from '../contracts/me.js';
 import type {
-  BackupCodes,
   BookingFilterOptions,
   HolidayAdded,
   Invite,
@@ -38,7 +37,6 @@ import type {
   OwnerBooking,
   OwnerService,
   OwnerServiceDetail,
-  Recovered,
   RescheduleAsked,
   ShopSettings,
   Stats,
@@ -334,22 +332,11 @@ export class OwnerManagersController {
   }
 }
 
-const BackupCode = z.object({
-  code: z.string().trim().min(1, 'Enter a backup code.').max(40),
-});
-
 /** The owner's and managers' own two-step login (the app itself is set up with Supabase). */
 @Roles('owner', 'manager')
 @Controller('two-step')
 export class TwoStepController {
   constructor(private readonly twoStep: TwoStepService) {}
-
-  /** Right after setting up the app (so the session has passed two-step). */
-  @Post('backup-codes')
-  @HttpCode(200)
-  backupCodes(@CurrentUser() me: Me): Promise<BackupCodes> {
-    return this.twoStep.newBackupCodes(me.id);
-  }
 
   /** "Remember this device for 30 days", right after a code (a remembered device can't renew itself). */
   @Post('devices')
@@ -358,18 +345,6 @@ export class TwoStepController {
     if (me.trustedDevice)
       throw new ForbiddenException('Enter the code from your app first.');
     return this.twoStep.rememberDevice(me.id);
-  }
-
-  /** Lost phone: works with just the password, so it's limited per account. */
-  @SkipTwoStep()
-  @RateLimit(perHour('two-step-recover', 10, 'user'))
-  @Post('recover')
-  @HttpCode(200)
-  recover(
-    @CurrentUser() me: Me,
-    @Body({ schema: BackupCode }) body: z.output<typeof BackupCode>,
-  ): Promise<Recovered> {
-    return this.twoStep.recover(me.id, body.code);
   }
 }
 

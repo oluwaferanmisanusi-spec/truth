@@ -177,11 +177,5 @@ export type SettingsClash = {
 /** POST /owner/holidays: bookings already on that day aren't touched, so say how many. */
 export type HolidayAdded = { date: string; bookingsThatDay: number };
 
-/** POST /two-step/backup-codes: shown once, as XXXXX-XXXXX. */
-export type BackupCodes = { codes: string[] };
-
-/** POST /two-step/recover: the app is removed; backup codes still unused. */
-export type Recovered = { remaining: number };
-
 /** POST /two-step/devices: the pass for "Remember this device", kept in a cookie by the website. */
 export type TrustedDevice = { token: string; expiresAt: string };

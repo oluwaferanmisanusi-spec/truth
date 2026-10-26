@@ -10,6 +10,7 @@
     "lint": "eslint",
     "create-owner": "node --env-file=api/.env scripts/create-owner.mjs",
     "sample-bookings": "node --env-file=api/.env scripts/add-sample-bookings.mjs",
+    "reset-two-step": "node --env-file=api/.env scripts/reset-two-step.mjs",
     "db:types": "node --env-file=api/.env scripts/db-types.mjs"
   },
   "dependencies": {

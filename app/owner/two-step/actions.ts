@@ -2,17 +2,17 @@
 
 // Two-step login for the owner and managers (decided 2026-10-26; not in Figma). Setting up
 // the app and checking its codes go straight to Supabase with the person's own session, like
-// logging in; Supabase then marks the session as two-step. Backup codes are the API's.
+// logging in; Supabase then marks the session as two-step. No backup codes (decided
+// 2026-10-26): a lost phone is reset by the owner (managers) or the developer (the owner).
 import { redirect } from "next/navigation";
-import type { BackupCodes, Recovered, TrustedDevice } from "@api/owner";
-import { api, ApiError } from "@/lib/api/client";
+import type { TrustedDevice } from "@api/owner";
+import { api } from "@/lib/api/client";
 import { getOwner } from "@/lib/auth/owner";
 import { rememberDevice } from "@/lib/auth/trusted-device";
 import { createClient } from "@/lib/supabase/server";
 
 export type CodeState = { error?: string } | undefined;
 export type Setup = { error?: string; factorId?: string; qr?: string; secret?: string };
-export type SetupDone = { error?: string; codes?: string[] };
 
 const SIX_DIGITS = /^\d{6}$/;
 const digits = (fd: FormData) => String(fd.get("code") ?? "").replace(/\s/g, "");
@@ -29,7 +29,7 @@ export async function startSetup(): Promise<Setup> {
   if (!(await getOwner())) redirect("/owner/login");
   const supabase = await createClient();
   const { data: factors } = await supabase.auth.mfa.listFactors();
-  // Someone who already has an app enters its code instead (or uses a backup code).
+  // Someone who already has an app enters its code instead.
   if (factors?.totp.length) redirect("/owner/two-step");
   // An unfinished setup (they left before typing a code) is replaced.
   for (const f of factors?.all ?? []) {
@@ -53,15 +53,15 @@ export async function startSetup(): Promise<Setup> {
   };
 }
 
-/** Step 2: the first code from the app turns two-step login on; then the backup codes. */
-export async function finishSetup(factorId: string, _prev: SetupDone | undefined, fd: FormData): Promise<SetupDone> {
+/** Step 2: the first code from the app turns two-step login on; then the dashboard. */
+export async function finishSetup(factorId: string, _prev: CodeState, fd: FormData): Promise<CodeState> {
   const code = digits(fd);
   if (!SIX_DIGITS.test(code)) return { error: "Enter the 6-digit code from your app." };
   const supabase = await createClient();
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
   if (error) return { error: error.status === 429 ? "Too many tries. Please wait a few minutes and try again." : WRONG_CODE };
   await rememberIfAsked(fd);
-  return await api<BackupCodes>("/two-step/backup-codes", { method: "POST" });
+  redirect("/owner/bookings");
 }
 
 /** Each log in: the code from the app. */
@@ -76,18 +76,4 @@ export async function verifyCode(_prev: CodeState, fd: FormData): Promise<CodeSt
   if (error) return { error: error.status === 429 ? "Too many tries. Please wait a few minutes and try again." : WRONG_CODE };
   await rememberIfAsked(fd);
   redirect("/owner/bookings");
-}
-
-/** Lost phone: a backup code removes the old app, then they set up the new phone. */
-export async function recoverWithBackupCode(_prev: CodeState, fd: FormData): Promise<CodeState> {
-  const code = String(fd.get("backup") ?? "").trim();
-  if (!code) return { error: "Enter one of your backup codes." };
-  let result: Recovered;
-  try {
-    result = await api<Recovered>("/two-step/recover", { method: "POST", body: { code } });
-  } catch (error) {
-    if (error instanceof ApiError && (error.status === 400 || error.status === 429)) return { error: error.message };
-    throw error;
-  }
-  redirect(`/owner/two-step/setup?recovered=${result.remaining}`);
 }

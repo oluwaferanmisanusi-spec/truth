@@ -64,8 +64,8 @@ export async function api<T>(path: string, { method = "GET", body }: Options = {
   // The owner or a manager without two-step login in this session: to the code screen,
   // rather than an error, wherever the dashboard asked.
   if (res.status === 403 && json?.code === "two_step_required") redirect((await twoStepPath()) ?? "/owner/two-step");
-  // Their session ended (logged out in another tab, password reset, removed, a used backup
-  // code): the dashboard and barber pages go to their log in page instead of an error.
+  // Their session ended (logged out in another tab, password reset, removed, a two-step
+  // reset): the dashboard and barber pages go to their log in page instead of an error.
   if (res.status === 401 && token) {
     if (path.startsWith("/owner") || path.startsWith("/two-step")) redirect("/owner/login");
     if (path.startsWith("/barber")) redirect("/login?next=/barber");

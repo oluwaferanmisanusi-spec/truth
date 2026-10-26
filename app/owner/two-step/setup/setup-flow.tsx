@@ -1,38 +1,30 @@
 "use client";
 
-// Set up the authenticator app (QR code or typed key, then its first code), then show the
-// backup codes once.
-import Link from "next/link";
-import { useActionState, useState, useTransition } from "react";
+// Set up the authenticator app: a QR code (or a key to type), then its first code.
+import { useActionState, useLayoutEffect, useState, useTransition } from "react";
 import { Alert } from "@/components/alert";
 import { TextField } from "@/components/form-field";
 import { AuthCard } from "@/components/owner/auth-card";
 import { RememberDevice } from "@/components/owner/remember-device";
 import { buttonClass } from "@/components/ui";
 import { logOut } from "@/app/owner/login/actions";
-import { finishSetup, startSetup, type Setup } from "../actions";
+import { finishSetup, startSetup, type CodeState, type Setup } from "../actions";
 
 const linkButton =
   "self-start rounded-md py-1 font-semibold text-primary hover:text-primary-hover hover:underline " +
   "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
-export function SetupFlow({ alreadyOn, recovered }: { alreadyOn: boolean; recovered?: number }) {
+export function SetupFlow() {
   const [setup, setSetup] = useState<Setup>();
   const [starting, startTransition] = useTransition();
-  const [done, finishAction, finishing] = useActionState(
-    (prev: Awaited<ReturnType<typeof finishSetup>> | undefined, fd: FormData) => finishSetup(setup?.factorId ?? "", prev, fd),
+  const [state, finishAction, finishing] = useActionState(
+    (prev: CodeState, fd: FormData) => finishSetup(setup?.factorId ?? "", prev, fd),
     undefined,
   );
 
-  if (done?.codes) return <BackupCodes codes={done.codes} />;
-
-  if (alreadyOn) {
-    return (
-      <AuthCard title="Two-step login is on" description="You’ve already set up your authenticator app.">
-        <Link href="/owner/bookings" className={buttonClass.primary}>Go to the dashboard</Link>
-      </AuthCard>
-    );
-  }
+  // Leaving the page keeps it alive but hidden (Next's Activity); forget the QR code then, so
+  // it never shows again after a log out, or to whoever logs in next on this computer.
+  useLayoutEffect(() => () => setSetup(undefined), []);
 
   if (setup?.factorId) {
     return (
@@ -46,11 +38,14 @@ export function SetupFlow({ alreadyOn, recovered }: { alreadyOn: boolean; recove
         </div>
         <form action={finishAction} className="flex flex-col gap-6" noValidate>
           <TextField id="code" name="code" label="Then enter the 6-digit code the app shows" inputMode="numeric"
-            autoComplete="one-time-code" maxLength={7} error={done?.error} autoFocus />
+            autoComplete="one-time-code" maxLength={7} error={state?.error} autoFocus />
           <RememberDevice />
           <button type="submit" className={buttonClass.primary} disabled={finishing}>
             {finishing ? "Checking…" : "Turn on two-step login"}
           </button>
+        </form>
+        <form action={logOut} className="border-t border-border pt-4">
+          <button type="submit" className={linkButton}>Log out</button>
         </form>
       </AuthCard>
     );
@@ -58,13 +53,7 @@ export function SetupFlow({ alreadyOn, recovered }: { alreadyOn: boolean; recove
 
   return (
     <AuthCard title="Set up two-step login"
-      description="To keep the shop’s dashboard safe, you’ll enter a code from an app on your phone each time you log in, as well as your password.">
-      {recovered !== undefined && (
-        <Alert title="Backup code accepted">
-          Your old phone no longer works for Truth. Set up the app on your new phone, and you’ll get a new set of
-          backup codes.
-        </Alert>
-      )}
+      description="To keep the shop’s dashboard safe, you’ll enter a code from an app on your phone when you log in on a new device, as well as your password.">
       <ol className="flex list-decimal flex-col gap-2 pl-5 text-ink">
         <li>Install a free authenticator app on your phone, such as Google Authenticator or Microsoft Authenticator.</li>
         <li>Continue, then scan the QR code with it.</li>
@@ -77,40 +66,6 @@ export function SetupFlow({ alreadyOn, recovered }: { alreadyOn: boolean; recove
       <form action={logOut} className="border-t border-border pt-4">
         <button type="submit" className={linkButton}>Log out</button>
       </form>
-    </AuthCard>
-  );
-}
-
-function BackupCodes({ codes }: { codes: string[] }) {
-  const [saved, setSaved] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const text = `Truth backup codes. Each code works once.\n\n${codes.join("\n")}\n`;
-  const download = `data:text/plain;charset=utf-8,${encodeURIComponent(text)}`;
-
-  return (
-    <AuthCard title="Save your backup codes"
-      description="If you lose your phone, each code lets you log in once. Keep them somewhere safe, such as a password manager. You won’t see them again.">
-      <Alert>Two-step login is on.</Alert>
-      <ol className="grid grid-cols-2 gap-x-6 gap-y-2 rounded-md border border-border bg-surface-muted px-5 py-4 font-mono text-body text-ink">
-        {codes.map((c) => <li key={c}>{c}</li>)}
-      </ol>
-      <div className="flex gap-3">
-        <button type="button" className={buttonClass.secondary}
-          onClick={() => navigator.clipboard.writeText(text).then(() => setCopied(true), () => {})}>
-          {copied ? "Copied" : "Copy codes"}
-        </button>
-        <a href={download} download="truth-backup-codes.txt" className={buttonClass.secondary}>Download</a>
-      </div>
-      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-ink">
-        <input type="checkbox" checked={saved} onChange={(e) => setSaved(e.target.checked)}
-          className="size-5 shrink-0 cursor-pointer accent-primary" />
-        I’ve saved my backup codes
-      </label>
-      {saved ? (
-        <Link href="/owner/bookings" className={buttonClass.primary}>Go to the dashboard</Link>
-      ) : (
-        <button type="button" className={buttonClass.primary} disabled>Go to the dashboard</button>
-      )}
     </AuthCard>
   );
 }

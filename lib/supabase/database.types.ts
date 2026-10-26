@@ -387,26 +387,6 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"two_step_backup_codes": {
-                  Row: {
-                    "code_hash": string,"created_at": string,"id": string,"used_at": string | null,"user_id": string
-                  }
-                  ComputedFields: never
-                  Insert: {
-                    "code_hash": string,"created_at"?: string,"id"?: string,"used_at"?: string | null,"user_id": string
-                  }
-                  Update: {
-                    "code_hash"?: string,"created_at"?: string,"id"?: string,"used_at"?: string | null,"user_id"?: string
-                  }
-                  Relationships: [
-                    {
-      foreignKeyName: "two_step_backup_codes_user_id_fkey"
-      columns: ["user_id"]
-isOneToOne: false
-      referencedRelation: "profiles"
-      referencedColumns: ["id"]
-    }
-                  ]
                 },"two_step_trusted_devices": {
                   Row: {
                     "created_at": string,"expires_at": string,"id": string,"token_hash": string,"user_id": string

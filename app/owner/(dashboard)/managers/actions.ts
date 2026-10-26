@@ -55,7 +55,7 @@ export async function removeManager(id: string): Promise<{ error?: string }> {
   }
 }
 
-/** Owner only: a manager who lost their phone and backup codes sets two-step login up again. */
+/** Owner only: a manager who lost their phone sets two-step login up again. */
 export async function resetManagerTwoStep(id: string): Promise<{ error?: string }> {
   try {
     await api(`/owner/managers/${encodeURIComponent(id)}/reset-two-step`, { method: "POST" });

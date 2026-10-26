@@ -160,7 +160,7 @@ export function ManagersList({ team, isOwner }: { team: Team; isOwner: boolean }
         </div>
         <p className="text-caption font-medium text-ink-muted">
           Invites expire after 7 days. Only the owner can invite or remove managers, or reset a manager’s two-step
-          login if they lose their phone and backup codes.
+          login if they lose their phone.
         </p>
       </div>
 
@@ -227,8 +227,8 @@ export function ManagersList({ team, isOwner }: { team: Team; isOwner: boolean }
         }
       >
         <p>
-          Do this if they’ve lost their phone and their backup codes. Their authenticator app and backup codes stop
-          working and they’re logged out. When they next log in with their password, they’ll set it up again.
+          Do this if they’ve lost their phone. Their authenticator app stops working for Truth and they’re logged
+          out. When they next log in with their password, they’ll set it up on their new phone.
         </p>
       </Dialog>
     </>

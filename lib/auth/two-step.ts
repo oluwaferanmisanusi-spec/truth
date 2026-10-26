@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 /** Where to go next: null once two-step is passed (code or remembered device), else the code or setup screen. */
 export async function twoStepPath(): Promise<"/owner/two-step" | "/owner/two-step/setup" | null> {
   if ((await getAccount())?.twoStep) return null;
-  // Asks Supabase for the current list, so a reset or a used backup code shows at once.
+  // Asks Supabase for the current list, so a reset shows at once.
   const supabase = await createClient();
   const { data: factors } = await supabase.auth.mfa.listFactors();
   return factors?.totp.length ? "/owner/two-step" : "/owner/two-step/setup";
