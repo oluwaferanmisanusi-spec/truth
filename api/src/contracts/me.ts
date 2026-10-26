@@ -14,6 +14,8 @@ export type Me = {
   verified: boolean;
   /** A barber's record while the owner has them as active; null when deactivated, and for everyone else. */
   barberId: string | null;
+  /** This session passed two-step login (the authenticator code). The owner and managers need it for the dashboard. */
+  twoStep: boolean;
 };
 
 /** POST /me/verification-email and friends: where the link went, or that one went out under a minute ago. */

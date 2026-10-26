@@ -3,7 +3,8 @@
 // may do what.
 import "server-only";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { twoStepPath } from "@/lib/auth/two-step";
 import { createClient } from "@/lib/supabase/server";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3200";
@@ -56,6 +57,9 @@ export async function api<T>(path: string, { method = "GET", body }: Options = {
     cache: "no-store",
   });
   const json = res.status === 204 ? null : await res.json().catch(() => null);
+  // The owner or a manager without two-step login in this session: to the code screen,
+  // rather than an error, wherever the dashboard asked.
+  if (res.status === 403 && json?.code === "two_step_required") redirect((await twoStepPath()) ?? "/owner/two-step");
   if (!res.ok) {
     const message = typeof json?.message === "string" ? json.message : "Something went wrong";
     throw new ApiError(res.status, message, json?.code, json?.fieldErrors, json ?? {});

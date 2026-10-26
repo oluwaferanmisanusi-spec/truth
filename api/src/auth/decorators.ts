@@ -2,6 +2,7 @@
 //   @Public()          anyone may call it (a logged-in user is still recognised if present)
 //   @Roles('owner')    only these roles; everything else needs any logged-in user
 //   @Roles('barber')   only barbers the owner has as active
+//   @SkipTwoStep()     an owner/manager route that works before the two-step code (backup codes)
 //   @CurrentUser()     puts the logged-in person into a controller method's argument
 import {
   createParamDecorator,
@@ -13,9 +14,11 @@ import type { Me, Role } from '../contracts/me.js';
 
 export const IS_PUBLIC = 'isPublic';
 export const ROLES = 'roles';
+export const SKIP_TWO_STEP = 'skipTwoStep';
 
 export const Public = () => SetMetadata(IS_PUBLIC, true);
 export const Roles = (...roles: Role[]) => SetMetadata(ROLES, roles);
+export const SkipTwoStep = () => SetMetadata(SKIP_TWO_STEP, true);
 
 export type AuthedRequest = Request & { user?: Me | null };
 

@@ -1,6 +1,6 @@
 // The owner's desktop screens (Figma 5.1–5.12). @Roles('owner', 'manager') on each class
 // locks every route in it to the owner and managers; a route marked @Roles('owner') is the
-// owner's alone (inviting managers).
+// owner's alone (managing managers). All of them need two-step login (see AuthGuard).
 import {
   Body,
   Controller,
@@ -13,7 +13,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { CurrentUser, Public, Roles } from '../auth/decorators.js';
+import { CurrentUser, Public, Roles, SkipTwoStep } from '../auth/decorators.js';
 import { perHour, RateLimit } from '../auth/rate-limit.js';
 import { shopToday } from '../common/format.js';
 import {
@@ -26,6 +26,7 @@ import {
 } from '../config/validation.js';
 import type { Me } from '../contracts/me.js';
 import type {
+  BackupCodes,
   BookingFilterOptions,
   HolidayAdded,
   Invite,
@@ -36,6 +37,7 @@ import type {
   OwnerBooking,
   OwnerService,
   OwnerServiceDetail,
+  Recovered,
   RescheduleAsked,
   ShopSettings,
   Stats,
@@ -46,6 +48,7 @@ import { OwnerBookingsService } from './owner-bookings.service.js';
 import { OwnerManagersService } from './owner-managers.service.js';
 import { OwnerServicesService, ServiceBody } from './owner-services.service.js';
 import { OwnerSettingsService, TIME_ZONES } from './owner-settings.service.js';
+import { TwoStepService } from './two-step.service.js';
 import { WeekHours } from './week.js';
 
 const DateRange = z
@@ -283,7 +286,10 @@ const NewManager = z.object({ name: FullName, password: NewPassword });
 @Roles('owner', 'manager')
 @Controller('owner')
 export class OwnerManagersController {
-  constructor(private readonly managers: OwnerManagersService) {}
+  constructor(
+    private readonly managers: OwnerManagersService,
+    private readonly twoStep: TwoStepService,
+  ) {}
 
   @Get('managers')
   team(@CurrentUser() me: Me): Promise<Team> {
@@ -316,6 +322,43 @@ export class OwnerManagersController {
   @Delete('managers/:id')
   remove(@Param('id', { schema: Id }) id: string) {
     return this.managers.remove(id);
+  }
+
+  @Roles('owner')
+  @Post('managers/:id/reset-two-step')
+  @HttpCode(200)
+  resetTwoStep(@Param('id', { schema: Id }) id: string) {
+    return this.twoStep.reset(id);
+  }
+}
+
+const BackupCode = z.object({
+  code: z.string().trim().min(1, 'Enter a backup code.').max(40),
+});
+
+/** The owner's and managers' own two-step login (the app itself is set up with Supabase). */
+@Roles('owner', 'manager')
+@Controller('two-step')
+export class TwoStepController {
+  constructor(private readonly twoStep: TwoStepService) {}
+
+  /** Right after setting up the app (so the session has passed two-step). */
+  @Post('backup-codes')
+  @HttpCode(200)
+  backupCodes(@CurrentUser() me: Me): Promise<BackupCodes> {
+    return this.twoStep.newBackupCodes(me.id);
+  }
+
+  /** Lost phone: works with just the password, so it's limited per account. */
+  @SkipTwoStep()
+  @RateLimit(perHour('two-step-recover', 10, 'user'))
+  @Post('recover')
+  @HttpCode(200)
+  recover(
+    @CurrentUser() me: Me,
+    @Body({ schema: BackupCode }) body: z.output<typeof BackupCode>,
+  ): Promise<Recovered> {
+    return this.twoStep.recover(me.id, body.code);
   }
 }
 

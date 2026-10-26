@@ -10,7 +10,12 @@ import {
 import { Reflector } from '@nestjs/core';
 import type { Me, Role } from '../contracts/me.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
-import { IS_PUBLIC, ROLES, type AuthedRequest } from './decorators.js';
+import {
+  IS_PUBLIC,
+  ROLES,
+  SKIP_TWO_STEP,
+  type AuthedRequest,
+} from './decorators.js';
 
 /** A deactivated barber keeps the barber role but loses access, so check they're active too. */
 const hasRole = (user: Me, role: Role) =>
@@ -45,6 +50,19 @@ export class AuthGuard implements CanActivate {
     if (!req.user) throw new UnauthorizedException('Log in to continue');
     if (roles && !roles.some((role) => hasRole(req.user!, role)))
       throw new ForbiddenException('Not allowed');
+
+    // The owner and managers need two-step login for the dashboard (2026-10-26): a password
+    // alone isn't enough, even if someone skips the website's code screen.
+    const dashboard = roles?.includes('owner') || roles?.includes('manager');
+    const skip = this.reflector.getAllAndOverride<boolean>(
+      SKIP_TWO_STEP,
+      targets,
+    );
+    if (dashboard && !req.user.twoStep && !skip)
+      throw new ForbiddenException({
+        message: 'Enter the code from your authenticator app to continue.',
+        code: 'two_step_required',
+      });
     return true;
   }
 }

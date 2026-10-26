@@ -759,6 +759,39 @@ export type Database = {
           },
         ];
       };
+      two_step_backup_codes: {
+        Row: {
+          code_hash: string;
+          created_at: string;
+          id: string;
+          used_at: string | null;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          code_hash: string;
+          created_at?: string;
+          id?: string;
+          used_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          code_hash?: string;
+          created_at?: string;
+          id?: string;
+          used_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'two_step_backup_codes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       barber_schedule: {

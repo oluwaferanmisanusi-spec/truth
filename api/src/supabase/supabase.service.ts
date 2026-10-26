@@ -53,6 +53,7 @@ export class SupabaseService {
       role: profile.role,
       verified: Boolean(profile.email_verified_at),
       barberId: barber?.id ?? null,
+      twoStep: data.claims.aal === 'aal2',
     };
   }
 }

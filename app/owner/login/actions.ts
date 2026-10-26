@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAccount, loginBlocked } from "@/lib/auth/customer";
+import { twoStepPath } from "@/lib/auth/two-step";
 
 export type LoginState = { error?: string; email?: string } | undefined;
 
@@ -31,7 +32,8 @@ export async function logIn(_prev: LoginState, formData: FormData): Promise<Logi
     return { error: WRONG_DETAILS, email };
   }
 
-  redirect("/owner/bookings");
+  // Then the code from their authenticator app, or setting the app up the first time.
+  redirect((await twoStepPath()) ?? "/owner/bookings");
 }
 
 export async function logOut() {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getOwner } from "@/lib/auth/owner";
+import { twoStepPath } from "@/lib/auth/two-step";
 import { AuthCard } from "@/components/owner/auth-card";
 import { LoginForm } from "./login-form";
 
@@ -21,8 +22,8 @@ export default function OwnerLoginPage() {
   );
 }
 
-// Already logged in as the owner? Skip straight to the dashboard.
+// Already logged in as the owner or a manager? Skip to the dashboard, or the two-step code.
 async function RedirectIfOwner() {
-  if (await getOwner()) redirect("/owner/bookings");
+  if (await getOwner()) redirect((await twoStepPath()) ?? "/owner/bookings");
   return null;
 }

@@ -1,0 +1,84 @@
+"use server";
+
+// Two-step login for the owner and managers (decided 2026-10-26; not in Figma). Setting up
+// the app and checking its codes go straight to Supabase with the person's own session, like
+// logging in; Supabase then marks the session as two-step. Backup codes are the API's.
+import { redirect } from "next/navigation";
+import type { BackupCodes, Recovered } from "@api/owner";
+import { api, ApiError } from "@/lib/api/client";
+import { getOwner } from "@/lib/auth/owner";
+import { createClient } from "@/lib/supabase/server";
+
+export type CodeState = { error?: string } | undefined;
+export type Setup = { error?: string; factorId?: string; qr?: string; secret?: string };
+export type SetupDone = { error?: string; codes?: string[] };
+
+const SIX_DIGITS = /^\d{6}$/;
+const digits = (fd: FormData) => String(fd.get("code") ?? "").replace(/\s/g, "");
+const WRONG_CODE = "That code didn’t work. Check the code in your app and try again. It changes every 30 seconds.";
+
+/** Step 1 of setup: a new authenticator app for this login, as a QR code and a typed key. */
+export async function startSetup(): Promise<Setup> {
+  if (!(await getOwner())) redirect("/owner/login");
+  const supabase = await createClient();
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  // Someone who already has an app enters its code instead (or uses a backup code).
+  if (factors?.totp.length) redirect("/owner/two-step");
+  // An unfinished setup (they left before typing a code) is replaced.
+  for (const f of factors?.all ?? []) {
+    if (f.factor_type === "totp" && f.status !== "verified") await supabase.auth.mfa.unenroll({ factorId: f.id });
+  }
+  const { data, error } = await supabase.auth.mfa.enroll({
+    factorType: "totp",
+    friendlyName: "Authenticator app",
+    issuer: "Truth",
+  });
+  if (error || !data) {
+    console.error("Two-step setup failed", error);
+    return { error: "We couldn’t start the setup. Please try again." };
+  }
+  // Supabase gives the QR code as raw SVG text; encode it so it's a safe image address.
+  const svg = data.totp.qr_code.replace(/^data:image\/svg\+xml;utf-8,/, "");
+  return {
+    factorId: data.id,
+    qr: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+    secret: data.totp.secret,
+  };
+}
+
+/** Step 2: the first code from the app turns two-step login on; then the backup codes. */
+export async function finishSetup(factorId: string, _prev: SetupDone | undefined, fd: FormData): Promise<SetupDone> {
+  const code = digits(fd);
+  if (!SIX_DIGITS.test(code)) return { error: "Enter the 6-digit code from your app." };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
+  if (error) return { error: error.status === 429 ? "Too many tries. Please wait a few minutes and try again." : WRONG_CODE };
+  return await api<BackupCodes>("/two-step/backup-codes", { method: "POST" });
+}
+
+/** Each log in: the code from the app. */
+export async function verifyCode(_prev: CodeState, fd: FormData): Promise<CodeState> {
+  const code = digits(fd);
+  if (!SIX_DIGITS.test(code)) return { error: "Enter the 6-digit code from your app." };
+  const supabase = await createClient();
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const factor = factors?.totp[0];
+  if (!factor) redirect("/owner/two-step/setup");
+  const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code });
+  if (error) return { error: error.status === 429 ? "Too many tries. Please wait a few minutes and try again." : WRONG_CODE };
+  redirect("/owner/bookings");
+}
+
+/** Lost phone: a backup code removes the old app, then they set up the new phone. */
+export async function recoverWithBackupCode(_prev: CodeState, fd: FormData): Promise<CodeState> {
+  const code = String(fd.get("backup") ?? "").trim();
+  if (!code) return { error: "Enter one of your backup codes." };
+  let result: Recovered;
+  try {
+    result = await api<Recovered>("/two-step/recover", { method: "POST", body: { code } });
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 400 || error.status === 429)) return { error: error.message };
+    throw error;
+  }
+  redirect(`/owner/two-step/setup?recovered=${result.remaining}`);
+}
