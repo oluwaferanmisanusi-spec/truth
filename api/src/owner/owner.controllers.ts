@@ -5,6 +5,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   Param,
@@ -42,6 +43,7 @@ import type {
   ShopSettings,
   Stats,
   Team,
+  TrustedDevice,
 } from '../contracts/owner.js';
 import { OwnerBarbersService } from './owner-barbers.service.js';
 import { OwnerBookingsService } from './owner-bookings.service.js';
@@ -347,6 +349,15 @@ export class TwoStepController {
   @HttpCode(200)
   backupCodes(@CurrentUser() me: Me): Promise<BackupCodes> {
     return this.twoStep.newBackupCodes(me.id);
+  }
+
+  /** "Remember this device for 30 days", right after a code (a remembered device can't renew itself). */
+  @Post('devices')
+  @HttpCode(200)
+  rememberDevice(@CurrentUser() me: Me): Promise<TrustedDevice> {
+    if (me.trustedDevice)
+      throw new ForbiddenException('Enter the code from your app first.');
+    return this.twoStep.rememberDevice(me.id);
   }
 
   /** Lost phone: works with just the password, so it's limited per account. */

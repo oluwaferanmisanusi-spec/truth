@@ -792,6 +792,39 @@ export type Database = {
           },
         ];
       };
+      two_step_trusted_devices: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          id: string;
+          token_hash: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          token_hash: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          token_hash?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'two_step_trusted_devices_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       barber_schedule: {

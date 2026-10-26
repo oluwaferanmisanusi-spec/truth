@@ -7,6 +7,7 @@ import { useActionState, useState, useTransition } from "react";
 import { Alert } from "@/components/alert";
 import { TextField } from "@/components/form-field";
 import { AuthCard } from "@/components/owner/auth-card";
+import { RememberDevice } from "@/components/owner/remember-device";
 import { buttonClass } from "@/components/ui";
 import { logOut } from "@/app/owner/login/actions";
 import { finishSetup, startSetup, type Setup } from "../actions";
@@ -46,6 +47,7 @@ export function SetupFlow({ alreadyOn, recovered }: { alreadyOn: boolean; recove
         <form action={finishAction} className="flex flex-col gap-6" noValidate>
           <TextField id="code" name="code" label="Then enter the 6-digit code the app shows" inputMode="numeric"
             autoComplete="one-time-code" maxLength={7} error={done?.error} autoFocus />
+          <RememberDevice />
           <button type="submit" className={buttonClass.primary} disabled={finishing}>
             {finishing ? "Checking…" : "Turn on two-step login"}
           </button>

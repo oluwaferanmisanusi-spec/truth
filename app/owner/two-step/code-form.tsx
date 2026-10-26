@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { TextField } from "@/components/form-field";
+import { RememberDevice } from "@/components/owner/remember-device";
 import { buttonClass } from "@/components/ui";
 import { logOut } from "@/app/owner/login/actions";
 import { recoverWithBackupCode, verifyCode } from "./actions";
@@ -37,6 +38,7 @@ export function CodeForm() {
         <form key="code" action={codeAction} className="flex flex-col gap-6" noValidate>
           <TextField id="code" name="code" label="6-digit code" inputMode="numeric" autoComplete="one-time-code"
             maxLength={7} error={codeState?.error} autoFocus />
+          <RememberDevice />
           <button type="submit" className={buttonClass.primary} disabled={codePending}>
             {codePending ? "Checking…" : "Continue"}
           </button>

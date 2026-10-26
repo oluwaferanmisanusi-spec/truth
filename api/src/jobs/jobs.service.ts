@@ -86,6 +86,10 @@ export class JobsService {
     const monthAgo = ago(30 * 24 * 60 * MINUTE);
     await db.from('auth_tokens').delete().lt('expires_at', monthAgo);
     await db
+      .from('two_step_trusted_devices')
+      .delete()
+      .lt('expires_at', new Date().toISOString());
+    await db
       .from('rate_limits')
       .delete()
       .lt('window_start', ago(24 * 60 * MINUTE));

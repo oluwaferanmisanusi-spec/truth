@@ -8,11 +8,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
-import { hashToken } from '../common/tokens.js';
-import type { BackupCodes, Recovered } from '../contracts/owner.js';
+import { hashToken, newToken } from '../common/tokens.js';
+import type {
+  BackupCodes,
+  Recovered,
+  TrustedDevice,
+} from '../contracts/owner.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 
 const CODE_COUNT = 10;
+/** "Remember this device": no code on that device for this long (decided 2026-10-26). */
+const DEVICE_DAYS = 30;
 /** 32 letters and digits without look-alikes (0/O, 1/I), so 256 divides evenly: no bias. */
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
@@ -69,6 +75,7 @@ export class TwoStepService {
       });
     }
     await this.removeApps(userId);
+    await this.forgetDevices(userId);
     const { count } = await db
       .from('two_step_backup_codes')
       .select('id', { count: 'exact', head: true })
@@ -91,6 +98,7 @@ export class TwoStepService {
     if (!person || person.role !== 'manager')
       throw new NotFoundException('Manager not found');
     await this.removeApps(managerId);
+    await this.forgetDevices(managerId);
     const { error } = await db
       .from('two_step_backup_codes')
       .delete()
@@ -101,6 +109,31 @@ export class TwoStepService {
     });
     if (revokeError) throw revokeError;
     return { name: person.full_name };
+  }
+
+  /**
+   * After a code: a pass that lets this device skip the code for 30 days. Only the token's
+   * hash is stored; the website keeps the token in an httpOnly cookie.
+   */
+  async rememberDevice(userId: string): Promise<TrustedDevice> {
+    const { token, hash } = newToken();
+    const expiresAt = new Date(
+      Date.now() + DEVICE_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const { error } = await this.supabase.admin
+      .from('two_step_trusted_devices')
+      .insert({ user_id: userId, token_hash: hash, expires_at: expiresAt });
+    if (error) throw error;
+    return { token, expiresAt };
+  }
+
+  /** Every remembered device of theirs needs the code again. */
+  async forgetDevices(userId: string) {
+    const { error } = await this.supabase.admin
+      .from('two_step_trusted_devices')
+      .delete()
+      .eq('user_id', userId);
+    if (error) throw error;
   }
 
   /** Who has an authenticator app set up, for the Managers page. */

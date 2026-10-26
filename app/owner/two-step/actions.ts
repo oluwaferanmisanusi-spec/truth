@@ -4,9 +4,10 @@
 // the app and checking its codes go straight to Supabase with the person's own session, like
 // logging in; Supabase then marks the session as two-step. Backup codes are the API's.
 import { redirect } from "next/navigation";
-import type { BackupCodes, Recovered } from "@api/owner";
+import type { BackupCodes, Recovered, TrustedDevice } from "@api/owner";
 import { api, ApiError } from "@/lib/api/client";
 import { getOwner } from "@/lib/auth/owner";
+import { rememberDevice } from "@/lib/auth/trusted-device";
 import { createClient } from "@/lib/supabase/server";
 
 export type CodeState = { error?: string } | undefined;
@@ -15,6 +16,12 @@ export type SetupDone = { error?: string; codes?: string[] };
 
 const SIX_DIGITS = /^\d{6}$/;
 const digits = (fd: FormData) => String(fd.get("code") ?? "").replace(/\s/g, "");
+/** "Remember this device for 30 days" ticked: the API's pass goes in a cookie. */
+async function rememberIfAsked(fd: FormData) {
+  if (fd.get("remember") !== "on") return;
+  await rememberDevice(await api<TrustedDevice>("/two-step/devices", { method: "POST" }));
+}
+
 const WRONG_CODE = "That code didn’t work. Check the code in your app and try again. It changes every 30 seconds.";
 
 /** Step 1 of setup: a new authenticator app for this login, as a QR code and a typed key. */
@@ -53,6 +60,7 @@ export async function finishSetup(factorId: string, _prev: SetupDone | undefined
   const supabase = await createClient();
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
   if (error) return { error: error.status === 429 ? "Too many tries. Please wait a few minutes and try again." : WRONG_CODE };
+  await rememberIfAsked(fd);
   return await api<BackupCodes>("/two-step/backup-codes", { method: "POST" });
 }
 
@@ -66,6 +74,7 @@ export async function verifyCode(_prev: CodeState, fd: FormData): Promise<CodeSt
   if (!factor) redirect("/owner/two-step/setup");
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code });
   if (error) return { error: error.status === 429 ? "Too many tries. Please wait a few minutes and try again." : WRONG_CODE };
+  await rememberIfAsked(fd);
   redirect("/owner/bookings");
 }
 

@@ -22,6 +22,7 @@ const owner: Me = {
   verified: true,
   barberId: null,
   twoStep: true,
+  trustedDevice: false,
 };
 const customer: Me = { ...owner, id: 'u2', role: 'customer' };
 const barber: Me = { ...owner, id: 'u3', role: 'barber', barberId: 'b1' };

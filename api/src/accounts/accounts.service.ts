@@ -154,6 +154,12 @@ export class AccountsService {
       { p_user_id: found.userId },
     );
     if (revokeError) throw revokeError;
+    // Remembered devices need the two-step code again (owner and managers).
+    const { error: devicesError } = await this.supabase.admin
+      .from('two_step_trusted_devices')
+      .delete()
+      .eq('user_id', found.userId);
+    if (devicesError) throw devicesError;
     await this.markVerified(found.userId);
     return { email: data.user.email! };
   }

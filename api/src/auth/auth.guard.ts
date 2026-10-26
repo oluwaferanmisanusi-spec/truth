@@ -41,9 +41,13 @@ export class AuthGuard implements CanActivate {
 
     const req = ctx.switchToHttp().getRequest<AuthedRequest>();
     const [scheme, token] = req.headers.authorization?.split(' ') ?? [];
+    const device = req.headers['x-trusted-device'];
     req.user =
       scheme === 'Bearer' && token
-        ? await this.supabase.userFromToken(token)
+        ? await this.supabase.userFromToken(
+            token,
+            typeof device === 'string' ? device : undefined,
+          )
         : null;
 
     if (isPublic) return true;
