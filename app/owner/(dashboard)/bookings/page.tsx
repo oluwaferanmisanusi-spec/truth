@@ -46,7 +46,7 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
 
   return (
     <>
-      {filters.status !== "needs_outcome" && <OutcomesReminder due={due} today={today} />}
+      {!showsAllDue(filters, due, today) && <OutcomesReminder due={due} today={today} />}
       <div className="flex flex-col gap-4">
         <BookingFilters values={filters} today={today} options={options} isFiltered={isFiltered} />
         <p className="text-small text-ink-muted" aria-live="polite">
@@ -123,6 +123,13 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
       </div>
     </>
   );
+}
+
+// The reminder steps aside only while the list already shows every appointment it's about
+// (its own "Show them" link); a view of one barber's, or of fewer days, keeps it.
+function showsAllDue(filters: Filters, due: OutcomesDue, today: string) {
+  if (filters.status !== "needs_outcome" || filters.barber || filters.service || !due.oldest) return false;
+  return filters.from <= shopToday(new Date(due.oldest)) && filters.to >= today;
 }
 
 // Reminder to chase barbers for outcomes (decided with the shop on 2026-10-24; not in the

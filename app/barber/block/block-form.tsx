@@ -9,6 +9,7 @@ import { Calendar, CircleAlert, Clock } from "lucide-react";
 import type { ShopHours } from "@api/barber";
 import { Alert } from "@/components/alert";
 import { TextField } from "@/components/form-field";
+import { PickerButton, pickerInputClass } from "@/components/picker-button";
 import { BottomBar } from "@/components/shop/bars";
 import { buttonClass, fieldBoxClass } from "@/components/ui";
 import { addDays, SHOP_TIME_ZONE_LABEL } from "@/lib/format";
@@ -169,14 +170,11 @@ function DateInput({ id, label, value, min, onChange, error }: {
           onChange={(ev) => onChange(ev.target.value)}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${id}-error` : undefined}
-          className={
-            "min-w-0 flex-1 bg-transparent text-body outline-none " +
-            "[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 " +
-            "[&::-webkit-calendar-picker-indicator]:size-6 [&::-webkit-calendar-picker-indicator]:cursor-pointer " +
-            "[&::-webkit-calendar-picker-indicator]:opacity-0"
-          }
+          className={pickerInputClass}
         />
-        <Calendar aria-hidden size={20} className="pointer-events-none shrink-0 text-ink-muted" />
+        <PickerButton>
+          <Calendar size={20} />
+        </PickerButton>
       </div>
       <FieldError id={id} error={error} />
     </div>

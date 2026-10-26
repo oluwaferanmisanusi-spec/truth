@@ -51,7 +51,8 @@ export async function logIn(_prev: FormState | undefined, fd: FormData): Promise
     }
     redirect("/barber");
   }
-  const fallback = account?.role === "owner" ? "/owner/bookings" : "/bookings";
+  const usesDashboard = account?.role === "owner" || account?.role === "manager";
+  const fallback = usesDashboard ? "/owner/bookings" : "/bookings";
   redirect(holdPath(fd) ?? safeNext(fd.get("next"), fallback));
 }
 

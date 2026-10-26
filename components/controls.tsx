@@ -2,6 +2,7 @@
 
 // Figma "Switch" (6:3554), "Checkbox" (6:3537) and the Time form of "Field" (2:316).
 import { Check, Clock } from "lucide-react";
+import { PickerButton, pickerInputClass } from "@/components/picker-button";
 
 /** On/off with a visible Open/Closed label so it isn't colour-only. role="switch". */
 export function Switch({ checked, onChange, label, onText = "Open", offText = "Closed" }: {
@@ -57,7 +58,7 @@ export function Checkbox({ name, value, defaultChecked, children }: {
   );
 }
 
-/** Native time input with the design's clock icon over the (invisible) picker button. */
+/** Native time input; the design's clock icon opens its picker. */
 export function TimeInput({ name, value, onChange, label, invalid }: {
   name: string;
   value: string;
@@ -79,14 +80,11 @@ export function TimeInput({ name, value, onChange, label, invalid }: {
         aria-label={label}
         aria-invalid={invalid || undefined}
         onChange={(e) => onChange(e.target.value)}
-        className={
-          "min-w-0 flex-1 bg-transparent text-body outline-none " +
-          "[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 " +
-          "[&::-webkit-calendar-picker-indicator]:size-6 [&::-webkit-calendar-picker-indicator]:cursor-pointer " +
-          "[&::-webkit-calendar-picker-indicator]:opacity-0"
-        }
+        className={pickerInputClass}
       />
-      <Clock aria-hidden size={20} className="pointer-events-none shrink-0 text-ink-muted" />
+      <PickerButton>
+        <Clock size={20} />
+      </PickerButton>
     </div>
   );
 }

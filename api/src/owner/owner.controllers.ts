@@ -291,9 +291,10 @@ export class OwnerManagersController {
     return this.managers.cancel(id);
   }
 
+  @Roles('owner')
   @Delete('managers/:id')
-  remove(@CurrentUser() me: Me, @Param('id', { schema: Id }) id: string) {
-    return this.managers.remove(me, id);
+  remove(@Param('id', { schema: Id }) id: string) {
+    return this.managers.remove(id);
   }
 }
 

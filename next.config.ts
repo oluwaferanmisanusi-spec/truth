@@ -12,6 +12,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Dev server only: lets a phone on the same home network open the site
+  // (http://<this Mac's IP>:3100). Without it the page's scripts are blocked and it shows blank.
+  allowedDevOrigins: ["192.168.*.*"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -1,6 +1,7 @@
 // Figma "Field" (2:316) in its Date and Select forms, for owner filter rows.
 import type { ReactNode } from "react";
 import { Calendar, ChevronDown } from "lucide-react";
+import { PickerButton, pickerInputClass } from "@/components/picker-button";
 import { fieldBoxClass } from "@/components/ui";
 
 export function FilterField({ label, htmlFor, icon, className = "flex-1", children }: {
@@ -17,14 +18,13 @@ export function FilterField({ label, htmlFor, icon, className = "flex-1", childr
       </label>
       <div className={`relative ${fieldBoxClass}`}>
         {children}
-        <span className="pointer-events-none shrink-0 text-ink-muted">{icon}</span>
+        {icon}
       </div>
     </div>
   );
 }
 
-// The browser's own date input (decided 2026-10-20). Its picker indicator stays clickable
-// but invisible, sitting over the design's calendar icon.
+// The browser's own date input (decided 2026-10-20); the calendar icon opens its picker.
 export function DateField({ id, label, value, min, onChange, className }: {
   id: string;
   label: string;
@@ -34,19 +34,14 @@ export function DateField({ id, label, value, min, onChange, className }: {
   className?: string;
 }) {
   return (
-    <FilterField label={label} htmlFor={id} icon={<Calendar aria-hidden size={20} />} className={className}>
+    <FilterField label={label} htmlFor={id} icon={<PickerButton><Calendar size={20} /></PickerButton>} className={className}>
       <input
         id={id}
         type="date"
         value={value}
         min={min}
         onChange={(e) => onChange(e.target.value)}
-        className={
-          "min-w-0 flex-1 bg-transparent text-body outline-none " +
-          "[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 " +
-          "[&::-webkit-calendar-picker-indicator]:size-6 [&::-webkit-calendar-picker-indicator]:cursor-pointer " +
-          "[&::-webkit-calendar-picker-indicator]:opacity-0"
-        }
+        className={pickerInputClass}
       />
     </FilterField>
   );
@@ -61,7 +56,7 @@ export function SelectField({ id, label, all, value, options, onChange }: {
   onChange: (value: string) => void;
 }) {
   return (
-    <FilterField label={label} htmlFor={id} icon={<ChevronDown aria-hidden size={20} />}>
+    <FilterField label={label} htmlFor={id} icon={<ChevronDown aria-hidden size={20} className="pointer-events-none shrink-0 text-ink-muted" />}>
       <select
         id={id}
         value={value ?? ""}

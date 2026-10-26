@@ -58,7 +58,11 @@ export function ManagersList({ team, isOwner }: { team: Team; isOwner: boolean }
     <>
       <PageHeader
         title="Managers"
-        description="Managers can use this dashboard like you: bookings, stats, services, barbers and shop settings. Only you can invite them."
+        description={
+          isOwner
+            ? "Managers can use this dashboard like you: bookings, stats, services, barbers and shop settings. Only you can invite or remove them."
+            : "Managers can use this dashboard like the owner: bookings, stats, services, barbers and shop settings. Only the shop owner can invite or remove managers."
+        }
         action={
           isOwner ? (
             <button type="button" className={buttonClass.primary} onClick={() => setInviting(true)}>
@@ -96,7 +100,7 @@ export function ManagersList({ team, isOwner }: { team: Team; isOwner: boolean }
                 <Row key={m.id} name={m.isMe ? `${m.name} (you)` : m.name} email={m.email}
                   role={<span className={`${badge} bg-success-tint text-success`}>Manager</span>}
                   action={
-                    !m.isMe && (
+                    isOwner && (
                       <button type="button" className={buttonClass.ghost} aria-label={`Remove ${m.name}`}
                         onClick={() => setRemoving({ id: m.id, name: m.name })}>
                         Remove
@@ -113,6 +117,7 @@ export function ManagersList({ team, isOwner }: { team: Team; isOwner: boolean }
                     </span>
                   }
                   action={
+                    isOwner && (
                     <span className="flex justify-end gap-1">
                       <button type="button" className={buttonClass.ghost} disabled={pending && busyId === i.id}
                         aria-label={`Resend invite to ${i.email}`}
@@ -126,6 +131,7 @@ export function ManagersList({ team, isOwner }: { team: Team; isOwner: boolean }
                         Cancel invite
                       </button>
                     </span>
+                    )
                   }
                 />
               ))}
@@ -138,7 +144,7 @@ export function ManagersList({ team, isOwner }: { team: Team; isOwner: boolean }
           )}
         </div>
         <p className="text-caption font-medium text-ink-muted">
-          Invites expire after 7 days. A manager can remove other managers, but not the owner.
+          Invites expire after 7 days. Only the owner can invite or remove managers.
         </p>
       </div>
 

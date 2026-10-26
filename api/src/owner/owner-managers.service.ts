@@ -1,8 +1,7 @@
 // Managers: people the owner lets use the owner dashboard (decided 2026-10-24). Only the
-// owner invites them; the owner or another manager can remove one, never the owner.
+// owner invites and removes them (only the owner, decided 2026-10-26).
 import {
   ConflictException,
-  ForbiddenException,
   GoneException,
   Injectable,
   NotFoundException,
@@ -127,14 +126,8 @@ export class OwnerManagersService {
     return { email: data.email };
   }
 
-  /** Owner or manager. Only managers can be removed, and not by themselves. */
-  async remove(me: Me, profileId: string) {
-    if (profileId === me.id) {
-      throw new ForbiddenException({
-        message: 'You can’t remove yourself. Ask the shop owner to remove you.',
-        code: 'remove_self',
-      });
-    }
+  /** Owner only. Only managers can be removed. */
+  async remove(profileId: string) {
     const db = this.supabase.admin;
     const { data: person } = await db
       .from('profiles')
