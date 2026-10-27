@@ -89,27 +89,32 @@ export class RateLimitGuard implements CanActivate {
       const email = (req.body as { email?: unknown } | undefined)?.email;
       return typeof email === 'string' ? email.trim().toLowerCase() : undefined;
     }
-    return this.visitorIp(req);
-  }
-
-  /**
-   * The visitor's IP. Calls from our website arrive from Vercel's servers, so the website
-   * passes the visitor's IP in X-Visitor-IP, proven by the shared X-Internal-Key. Anyone
-   * else is counted by their own address (Vercel sets X-Real-IP; it can't be faked there).
-   */
-  private visitorIp(req: AuthedRequest) {
-    const key = this.config.get('INTERNAL_API_KEY', { infer: true });
-    const sent = req.header('x-internal-key');
-    const forwarded = req.header('x-visitor-ip');
-    if (key && sent && forwarded && sameSecret(sent, key))
-      return network(forwarded);
-    return network(
-      req.header('x-real-ip') ??
-        req.header('x-forwarded-for')?.split(',')[0]?.trim() ??
-        req.ip ??
-        'unknown',
+    return visitorNetwork(
+      req,
+      this.config.get('INTERNAL_API_KEY', { infer: true }),
     );
   }
+}
+
+/**
+ * The visitor's IP. Calls from our website arrive from Vercel's servers, so the website
+ * passes the visitor's IP in X-Visitor-IP, proven by the shared X-Internal-Key. Anyone
+ * else is counted by their own address (Vercel sets X-Real-IP; it can't be faked there).
+ */
+export function visitorNetwork(
+  req: AuthedRequest,
+  internalKey: string | undefined,
+) {
+  const sent = req.header('x-internal-key');
+  const forwarded = req.header('x-visitor-ip');
+  if (internalKey && sent && forwarded && sameSecret(sent, internalKey))
+    return network(forwarded);
+  return network(
+    req.header('x-real-ip') ??
+      req.header('x-forwarded-for')?.split(',')[0]?.trim() ??
+      req.ip ??
+      'unknown',
+  );
 }
 
 /**

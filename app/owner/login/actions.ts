@@ -27,15 +27,16 @@ export async function logIn(_prev: LoginState, formData: FormData): Promise<Logi
   // A customer or barber with valid details still can't use the owner screens.
   const role = (await getAccount())?.role;
   if (role !== "owner" && role !== "manager") {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     return { error: WRONG_DETAILS, email };
   }
 
   redirect("/owner/bookings");
 }
 
+// Logs out this device only (decided 2026-10-27); a password reset still ends every session.
 export async function logOut() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "local" });
   redirect("/owner/login");
 }

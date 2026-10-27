@@ -94,8 +94,14 @@ export class JobsService {
       );
     }
 
-    // 4. Old one-time links and attempt counts.
+    // 4. Old one-time links and attempt counts, and who made holds that are no longer
+    //    waiting for payment (only needed to count unpaid holds per visitor).
     const monthAgo = ago(30 * 24 * 60 * MINUTE);
+    await db
+      .from('bookings')
+      .update({ held_by: null })
+      .not('held_by', 'is', null)
+      .neq('status', 'pending_payment');
     await db.from('auth_tokens').delete().lt('expires_at', monthAgo);
     await db
       .from('rate_limits')

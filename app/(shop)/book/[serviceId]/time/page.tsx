@@ -49,7 +49,12 @@ async function ChooseTime({ params, searchParams }: Props) {
       <main className="flex flex-1 flex-col">
         <div className="flex flex-col gap-6 px-4 py-6">
           <Stepper step={3} context={`${service.name} with ${barber ? barber.fullName : "any available barber"}`} />
-          {one(query.limited) && (
+          {one(query.limited) === "holds" ? (
+            <Alert variant="warning" role="alert" title="You already have times on hold">
+              Pay for one of them, or go back from its payment page to let it go. Times you don’t pay for are
+              released after {words.hold}.
+            </Alert>
+          ) : one(query.limited) && (
             <Alert variant="warning" role="alert" title="Too many attempts">
               You’ve held a lot of times in the last hour. Please wait a while, then choose a time again.
             </Alert>

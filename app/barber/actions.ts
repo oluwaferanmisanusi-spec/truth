@@ -8,9 +8,10 @@ import { api, ApiError } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import { formatTime, isIsoDate } from "@/lib/format";
 
+// Logs out this device only (decided 2026-10-27); a password reset still ends every session.
 export async function logOut() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "local" });
   redirect("/login");
 }
 

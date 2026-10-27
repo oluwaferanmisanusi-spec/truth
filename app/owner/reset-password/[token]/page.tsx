@@ -29,7 +29,7 @@ async function ResetPassword({ params }: Pick<Props, "params">) {
 
   if (!valid) {
     return (
-      <AuthCard title="This link has expired" description="Reset links work for 1 hour. Ask for a new one to set your password.">
+      <AuthCard title="This link has expired" description="Reset links work once, for 1 hour. Ask for a new one to set your password.">
         <Link href="/owner/forgot-password" className={buttonClass.primary}>
           Send a new link
         </Link>

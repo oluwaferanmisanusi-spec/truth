@@ -43,7 +43,7 @@ export async function logIn(_prev: FormState | undefined, fd: FormData): Promise
   if (account?.role === "barber") {
     // Barber logins are barber-only: straight to their schedule, never a booking.
     if (!account.barberId) {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: "local" });
       return {
         errors: { form: "Your barber account isn’t active any more. Ask the shop owner if you think this is a mistake." },
         values: { email },
@@ -77,9 +77,10 @@ export async function signUp(_prev: FormState | undefined, fd: FormData): Promis
   redirect(holdPath(fd) ?? "/verify-email");
 }
 
+// Logs out this device only (decided 2026-10-27); a password reset still ends every session.
 export async function logOut(next: string) {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "local" });
   redirect(safeNext(next, "/"));
 }
 

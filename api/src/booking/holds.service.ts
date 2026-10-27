@@ -3,6 +3,8 @@
 import {
   BadGatewayException,
   ConflictException,
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
   NotFoundException,
@@ -22,6 +24,9 @@ export function maskEmail(email: string) {
   return `${email.slice(0, Math.min(2, at))}•••${email.slice(at)}`;
 }
 
+/** Unpaid holds one visitor can have at once (decided 2026-10-27). */
+const MAX_UNPAID_HOLDS = 3;
+
 const SELECT =
   'id, reference, status, service_id, service_name, duration_minutes, price_kobo, starts_at, hold_expires_at, any_barber, refund_due, customer_name, customer_email, barber_id, barbers!bookings_barber_id_fkey(full_name), payments(status, authorization_url)';
 
@@ -37,12 +42,33 @@ export class HoldsService {
   ) {}
 
   /** Holds a time for the shop's hold_minutes. 409 slot_taken if someone got there first. */
+  /** heldBy: a hash of the visitor's network, so they can't have too many unpaid at once. */
   async create(input: {
     serviceId: string;
     barberId: string | null;
     startsAt: string;
+    heldBy: string;
   }) {
-    const { data, error } = await this.supabase.admin.rpc('create_hold', {
+    const db = this.supabase.admin;
+    const { count, error: countError } = await db
+      .from('bookings')
+      .select('id', { count: 'exact', head: true })
+      .eq('held_by', input.heldBy)
+      .eq('status', 'pending_payment')
+      .gt('hold_expires_at', new Date().toISOString());
+    if (countError) throw countError;
+    if ((count ?? 0) >= MAX_UNPAID_HOLDS) {
+      throw new HttpException(
+        {
+          message:
+            'You already have times held. Pay for one or let it go, then try again.',
+          code: 'too_many_holds',
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    const { data, error } = await db.rpc('create_hold', {
       p_service_id: input.serviceId,
       // null = any barber; the generated types don't say the function accepts it.
       p_barber_id: input.barberId as string,
@@ -57,6 +83,13 @@ export class HoldsService {
     if (error?.message.includes('service_unavailable'))
       throw new NotFoundException('Service not available');
     if (error) throw error;
+    const { error: markError } = await db
+      .from('bookings')
+      .update({ held_by: input.heldBy })
+      .eq('id', data.id);
+    // The hold is made either way; only the count of unpaid holds misses it.
+    if (markError)
+      this.logger.error('Hold not marked with its visitor', markError);
     return { id: data.id };
   }
 

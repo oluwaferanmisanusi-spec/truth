@@ -272,6 +272,7 @@ export type Database = {
           duration_minutes: number;
           ends_at: string;
           guest_token_hash: string | null;
+          held_by: string | null;
           hold_expires_at: string | null;
           id: string;
           outcome_recorded_at: string | null;
@@ -304,6 +305,7 @@ export type Database = {
           duration_minutes: number;
           ends_at: string;
           guest_token_hash?: string | null;
+          held_by?: string | null;
           hold_expires_at?: string | null;
           id?: string;
           outcome_recorded_at?: string | null;
@@ -335,6 +337,7 @@ export type Database = {
           duration_minutes?: number;
           ends_at?: string;
           guest_token_hash?: string | null;
+          held_by?: string | null;
           hold_expires_at?: string | null;
           id?: string;
           outcome_recorded_at?: string | null;
@@ -940,6 +943,7 @@ export type Database = {
           duration_minutes: number;
           ends_at: string;
           guest_token_hash: string | null;
+          held_by: string | null;
           hold_expires_at: string | null;
           id: string;
           outcome_recorded_at: string | null;
@@ -1001,6 +1005,7 @@ export type Database = {
           duration_minutes: number;
           ends_at: string;
           guest_token_hash: string | null;
+          held_by: string | null;
           hold_expires_at: string | null;
           id: string;
           outcome_recorded_at: string | null;
@@ -1041,6 +1046,7 @@ export type Database = {
           duration_minutes: number;
           ends_at: string;
           guest_token_hash: string | null;
+          held_by: string | null;
           hold_expires_at: string | null;
           id: string;
           outcome_recorded_at: string | null;
@@ -1117,6 +1123,7 @@ export type Database = {
           duration_minutes: number;
           ends_at: string;
           guest_token_hash: string | null;
+          held_by: string | null;
           hold_expires_at: string | null;
           id: string;
           outcome_recorded_at: string | null;

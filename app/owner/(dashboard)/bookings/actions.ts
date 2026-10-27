@@ -21,8 +21,11 @@ export async function cancelBooking(bookingId: string): Promise<CancelResult> {
     console.error("Owner cancel failed", error);
     return { error: "Something went wrong and the booking wasn’t cancelled. Please try again." };
   }
+  // Refreshing now would remove the row's Cancel dialog before the owner reads why the refund
+  // didn't go through, so the dialog refreshes the page when it's closed.
+  if (refundFailed) return { refundFailed: true };
   refresh();
-  return refundFailed ? { refundFailed: true } : {};
+  return {};
 }
 
 export type RescheduleReason = "shop_closed" | "barber_unavailable" | "other";

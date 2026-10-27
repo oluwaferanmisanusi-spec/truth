@@ -10,10 +10,14 @@ import {
   Param,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { z } from 'zod';
-import { CurrentUser, Public } from '../auth/decorators.js';
-import { perHour, RateLimit } from '../auth/rate-limit.js';
+import { CurrentUser, Public, type AuthedRequest } from '../auth/decorators.js';
+import { perHour, RateLimit, visitorNetwork } from '../auth/rate-limit.js';
+import { hashToken } from '../common/tokens.js';
+import type { Env } from '../config/env.js';
 import type { Hold, ServiceWithBarbers, Times } from '../contracts/booking.js';
 import type { Me } from '../contracts/me.js';
 import {
@@ -50,6 +54,7 @@ export class BookingController {
   constructor(
     private readonly availability: AvailabilityService,
     private readonly holds: HoldsService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   @Get('services/:id')
@@ -73,20 +78,24 @@ export class BookingController {
     return this.availability.times(id, barberId, query);
   }
 
-  // Holds block a time for everyone else, so one visitor can't hold the whole day.
-  // Holds last 10 minutes, so 3 per 10 minutes also caps how many one visitor has at once.
-  @RateLimit(perHour('hold', 15), {
-    name: 'hold-burst',
-    limit: 3,
-    windowSeconds: 600,
-    by: 'ip',
-  })
+  // Holds block a time for everyone else, so one visitor can't hold the whole day: at most
+  // a few unpaid at once (HoldsService), and a generous hourly cap, since phones on a mobile
+  // network can share one address (decided 2026-10-27).
+  @RateLimit(perHour('hold', 40))
   @Post('holds')
-  createHold(@Body({ schema: NewHold }) body: z.output<typeof NewHold>) {
+  createHold(
+    @Body({ schema: NewHold }) body: z.output<typeof NewHold>,
+    @Req() req: AuthedRequest,
+  ) {
+    const network = visitorNetwork(
+      req,
+      this.config.get('INTERNAL_API_KEY', { infer: true }),
+    );
     return this.holds.create({
       serviceId: body.serviceId,
       barberId: anyToNull(body.barber),
       startsAt: body.startsAt,
+      heldBy: hashToken(network),
     });
   }
 

@@ -3,6 +3,7 @@
 // The row's Cancel action and its confirm dialog (Figma 5.2), plus "Ask to reschedule" and
 // its reasons dialog (decided with the shop on 2026-10-26, built from the same Modal).
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { CircleAlert } from "lucide-react";
 import { Dialog } from "@/components/dialog";
 import { TextAreaField } from "@/components/form-field";
@@ -24,6 +25,7 @@ export function CancelBookingButton(props: Props) {
   const [error, setError] = useState<string>();
   const [refundFailed, setRefundFailed] = useState(false);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
   const firstName = props.customerName.split(" ")[0];
 
   const close = () => {
@@ -31,6 +33,8 @@ export function CancelBookingButton(props: Props) {
     setOpen(undefined);
     setError(undefined);
     setRefundFailed(false);
+    // The booking was cancelled; show it now that the refund message has been read.
+    if (refundFailed) router.refresh();
   };
 
   const confirm = () =>

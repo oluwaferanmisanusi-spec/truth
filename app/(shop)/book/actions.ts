@@ -20,7 +20,9 @@ export async function holdTime(formData: FormData) {
       redirect(`/book/${encodeURIComponent(serviceId)}/time?${back}`);
     }
     if (error instanceof ApiError && error.status === 429) {
-      redirect(`/book/${encodeURIComponent(serviceId)}/time?${new URLSearchParams({ barber, date, limited: "1" })}`);
+      // "holds": this visitor already has times waiting for payment; "1": the hourly cap.
+      const limited = error.code === "too_many_holds" ? "holds" : "1";
+      redirect(`/book/${encodeURIComponent(serviceId)}/time?${new URLSearchParams({ barber, date, limited })}`);
     }
     // Bad input or the service stopped being bookable: start again from Home.
     if (error instanceof ApiError && (error.status === 400 || error.status === 404)) redirect("/");

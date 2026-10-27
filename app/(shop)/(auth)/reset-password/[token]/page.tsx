@@ -36,7 +36,7 @@ async function Reset({ params }: Pick<Props, "params">) {
       <>
         <div className="pt-4">
           <StatusHero icon={Clock} tone="warning" title="This link has expired">
-            Reset links work for 1 hour. Ask for a new one to set your password.
+            Reset links work once, for 1 hour. Ask for a new one to set your password.
           </StatusHero>
         </div>
         <Link href="/forgot-password" className={`${buttonClass.primary} w-full`}>Send a new link</Link>

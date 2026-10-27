@@ -83,8 +83,8 @@ async function Detail({ m }: { m: Managed }) {
         {b.phase === "late" && (
           <>
             <Alert variant="warning" title={`Less than ${words.refundWindow} to go`}>
-              You can’t reschedule now. If you cancel, the {price} you paid won’t be refunded. If you’re more than 15
-              minutes late, it counts as a no-show.
+              You can’t reschedule now. If you cancel, the {price} you paid won’t be refunded. If you’re more than {words.grace}{" "}
+              late, it counts as a no-show.
             </Alert>
             <div className="flex flex-col gap-2">
               <button type="button" className={`${buttonClass.secondary} w-full`} disabled>
