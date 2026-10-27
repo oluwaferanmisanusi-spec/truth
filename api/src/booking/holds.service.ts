@@ -24,8 +24,12 @@ export function maskEmail(email: string) {
   return `${email.slice(0, Math.min(2, at))}•••${email.slice(at)}`;
 }
 
-/** Unpaid holds one visitor can have at once (decided 2026-10-27). */
-const MAX_UNPAID_HOLDS = 3;
+/**
+ * One visitor can make 10 holds in 15 minutes; holds they paid for or let go (Back) don't
+ * count, so only unpaid ones made in that window do (decided 2026-10-27).
+ */
+const MAX_UNPAID_HOLDS = 10;
+const UNPAID_HOLDS_WINDOW_MS = 15 * 60 * 1000;
 
 const SELECT =
   'id, reference, status, service_id, service_name, duration_minutes, price_kobo, starts_at, hold_expires_at, any_barber, refund_due, customer_name, customer_email, barber_id, barbers!bookings_barber_id_fkey(full_name), payments(status, authorization_url)';
@@ -55,7 +59,10 @@ export class HoldsService {
       .select('id', { count: 'exact', head: true })
       .eq('held_by', input.heldBy)
       .eq('status', 'pending_payment')
-      .gt('hold_expires_at', new Date().toISOString());
+      .gt(
+        'created_at',
+        new Date(Date.now() - UNPAID_HOLDS_WINDOW_MS).toISOString(),
+      );
     if (countError) throw countError;
     if ((count ?? 0) >= MAX_UNPAID_HOLDS) {
       throw new HttpException(

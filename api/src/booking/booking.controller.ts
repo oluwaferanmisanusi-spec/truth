@@ -79,8 +79,8 @@ export class BookingController {
   }
 
   // Holds block a time for everyone else, so one visitor can't hold the whole day: at most
-  // a few unpaid at once (HoldsService), and a generous hourly cap, since phones on a mobile
-  // network can share one address (decided 2026-10-27).
+  // 10 unpaid in 15 minutes (HoldsService), and a generous hourly cap, since phones on a
+  // mobile network can share one address (decided 2026-10-27).
   @RateLimit(perHour('hold', 40))
   @Post('holds')
   createHold(

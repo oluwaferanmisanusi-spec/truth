@@ -51,8 +51,7 @@ async function ChooseTime({ params, searchParams }: Props) {
           <Stepper step={3} context={`${service.name} with ${barber ? barber.fullName : "any available barber"}`} />
           {one(query.limited) === "holds" ? (
             <Alert variant="warning" role="alert" title="You already have times on hold">
-              Pay for one of them, or go back from its payment page to let it go. Times you don’t pay for are
-              released after {words.hold}.
+              Pay for one of them, or go back from its payment page to let it go, then choose a time again.
             </Alert>
           ) : one(query.limited) && (
             <Alert variant="warning" role="alert" title="Too many attempts">
