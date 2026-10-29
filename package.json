@@ -4,13 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3100",
-    "dev:api": "npm --prefix api run start:dev",
+    "dev:api": "npm --prefix server run start:dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "create-owner": "node --env-file=api/.env scripts/create-owner.mjs",
-    "sample-bookings": "node --env-file=api/.env scripts/add-sample-bookings.mjs",
-    "db:types": "node --env-file=api/.env scripts/db-types.mjs"
+    "create-owner": "node --env-file=server/.env scripts/create-owner.mjs",
+    "sample-bookings": "node --env-file=server/.env scripts/add-sample-bookings.mjs",
+    "db:types": "node --env-file=server/.env scripts/db-types.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

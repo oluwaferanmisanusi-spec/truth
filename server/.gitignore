@@ -6,3 +6,4 @@ coverage/
 .env*
 # The settings template is safe to commit (names only, no values).
 !.env.example
+.vercel

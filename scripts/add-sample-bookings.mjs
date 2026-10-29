@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const { SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: serviceKey } = process.env;
 if (!url || !serviceKey) {
-  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in api/.env");
+  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in server/.env");
   process.exit(1);
 }
 const admin = createClient(url, serviceKey, { auth: { persistSession: false } });

@@ -1,5 +1,5 @@
-// Scheduled jobs, called by Vercel Cron (see api/vercel.json). Not for people: every call
-// must carry the CRON_SECRET that Vercel sends as a Bearer token.
+// Scheduled jobs, called on a schedule by GitHub Actions (Vercel's free plan only allows daily jobs).
+// Not for people: every call must carry the CRON_SECRET as a Bearer token.
 import {
   Controller,
   Get,
