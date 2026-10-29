@@ -14,7 +14,7 @@ import { SupabaseModule } from './supabase/supabase.module.js';
 
 @Module({
   imports: [
-    // api/.env holds every secret; the website's .env.local holds none.
+    // server/.env holds every secret; the website's .env.local holds none.
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env'],

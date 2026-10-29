@@ -20,7 +20,7 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@api/*": ["./api/src/contracts/*"]
+      "@api/*": ["./server/src/contracts/*"]
     }
   },
   "include": [
@@ -31,5 +31,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "api"]
+  "exclude": ["node_modules", "server"]
 }

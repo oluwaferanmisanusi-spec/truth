@@ -1,4 +1,5 @@
-// The API's settings, read from api/.env (template: api/.env.example). Only the API reads it.
+// The API's settings, read from server/.env (template: server/.env.example); on Vercel, from the
+// project's Environment Variables. Only the API reads them.
 // Checked once at start-up: a missing key stops the API with a clear message instead of
 // failing on the first request that needs it.
 import { z } from 'zod';
@@ -12,7 +13,7 @@ const schema = z.object({
   PAYSTACK_SECRET_KEY: z.string().startsWith('sk_'),
   RESEND_API_KEY: z.string().startsWith('re_'),
   EMAIL_FROM: z.string().min(1),
-  /** Vercel Cron sends this as a Bearer token to /jobs/…; without it the jobs refuse to run. */
+  /** The scheduled jobs send this as a Bearer token to /jobs/…; without it the jobs refuse to run. */
   CRON_SECRET: z.string().min(32).optional(),
   /** Shared with the website (server side only), so it can pass on the visitor's IP. */
   INTERNAL_API_KEY: z.string().min(32).optional(),
@@ -32,7 +33,9 @@ export function validateEnv(raw: Record<string, unknown>): Env {
   ).safeParse(raw);
   if (!result.success) {
     const missing = result.error.issues.map((i) => i.path.join('.')).join(', ');
-    throw new Error(`API settings missing or invalid in api/.env: ${missing}`);
+    throw new Error(
+      `API settings missing or invalid (server/.env, or Environment Variables on Vercel): ${missing}`,
+    );
   }
   return result.data;
 }
