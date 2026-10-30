@@ -1,0 +1,34 @@
+name: Scheduled jobs
+
+# Free replacement for Vercel's cron jobs (the free Vercel plan only allows once-a-day jobs).
+on:
+  schedule:
+    - cron: "17 * * * *"  # every hour: tidy (holds, missed payments, refunds, old links)
+    - cron: "5 18 * * *"  # 18:05 UTC = 19:05 Lagos: outcome reminders for barbers
+  workflow_dispatch:      # the "Run workflow" button runs both now
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TIDY: ${{ github.event.schedule != '5 18 * * *' }}
+      REMIND: ${{ github.event.schedule == '5 18 * * *' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Staging
+        if: ${{ !cancelled() && vars.STAGING_API_URL != '' }}
+        env:
+          API: ${{ vars.STAGING_API_URL }}
+          SECRET: ${{ secrets.STAGING_CRON_SECRET }}
+        run: |
+          if [ "$TIDY" = true ]; then curl --fail-with-body -sS --max-time 60 -H "Authorization: Bearer $SECRET" "$API/jobs/tidy"; echo; fi
+          if [ "$REMIND" = true ]; then curl --fail-with-body -sS --max-time 60 -H "Authorization: Bearer $SECRET" "$API/jobs/outcome-reminders"; echo; fi
+
+      - name: Live
+        if: ${{ !cancelled() && vars.LIVE_API_URL != '' }}
+        env:
+          API: ${{ vars.LIVE_API_URL }}
+          SECRET: ${{ secrets.LIVE_CRON_SECRET }}
+        run: |
+          if [ "$TIDY" = true ]; then curl --fail-with-body -sS --max-time 60 -H "Authorization: Bearer $SECRET" "$API/jobs/tidy"; echo; fi
+          if [ "$REMIND" = true ]; then curl --fail-with-body -sS --max-time 60 -H "Authorization: Bearer $SECRET" "$API/jobs/outcome-reminders"; echo; fi
