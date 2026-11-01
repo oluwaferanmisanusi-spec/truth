@@ -42,7 +42,7 @@ async function Detail({ m }: { m: Managed }) {
           </div>
         )}
         <div className="flex flex-col items-start gap-2">
-          <BookingStatusBadge status={b.status} />
+          <BookingStatusBadge status={b.status} rescheduleAsked={b.shopAsked !== null && b.phase !== "started"} />
           {guest ? <h2 className="text-h2">{b.serviceName}</h2> : <h1 className="text-h1">{b.serviceName}</h1>}
         </div>
         <BookingSummary

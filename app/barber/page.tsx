@@ -117,7 +117,7 @@ function AppointmentRow({ item }: { item: ScheduleAppointment }) {
             {item.serviceName} · {item.durationMinutes} min
           </span>
         </div>
-        <BookingStatusBadge status={item.status} startsAt={item.startsAt} />
+        <BookingStatusBadge status={item.status} startsAt={item.startsAt} rescheduleAsked={item.rescheduleAsked} />
       </Link>
     </li>
   );

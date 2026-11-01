@@ -37,7 +37,7 @@ async function Barber({ params }: { params: PageProps<"/owner/barbers/[id]">["pa
     from: shopToday(),
     to: barber.lastUpcoming ? isoDay(barber.lastUpcoming) : shopToday(),
     barber: barber.id,
-    status: "confirmed",
+    status: "upcoming",
   })}`;
 
   return (

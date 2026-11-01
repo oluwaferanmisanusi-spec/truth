@@ -21,7 +21,7 @@ export function formatHolidayDate(isoDate: string) {
 
 /** Bookings → that day's upcoming bookings, ready to cancel or move. */
 export function bookingsOnDay(isoDate: string) {
-  return `/owner/bookings?${new URLSearchParams({ from: isoDate, to: isoDate, status: "confirmed" })}`;
+  return `/owner/bookings?${new URLSearchParams({ from: isoDate, to: isoDate, status: "upcoming" })}`;
 }
 
 export async function getShopSettings() {

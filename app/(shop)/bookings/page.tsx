@@ -74,7 +74,7 @@ async function MyBookings({ searchParams }: Pick<Props, "searchParams">) {
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div className="flex items-center justify-between gap-2">
                       <h2 className="font-sans text-h3 font-semibold tracking-normal">{b.serviceName}</h2>
-                      <BookingStatusBadge status={b.status} />
+                      <BookingStatusBadge status={b.status} rescheduleAsked={b.rescheduleAsked} />
                     </div>
                     <p className="flex items-center gap-2 text-small text-ink-muted">
                       <CalendarDays aria-hidden size={16} className="shrink-0" />

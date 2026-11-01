@@ -34,7 +34,12 @@ export type BookingFilters = {
    * confirmed: booked and not started yet. needs_outcome: confirmed and started, no outcome recorded.
    * refund_failed: a refund owed on it didn't go through (includes refunded late payments).
    */
-  status?: BookingStatus | 'needs_outcome' | 'refund_failed';
+  status?:
+    | BookingStatus
+    | 'needs_outcome'
+    | 'refund_failed'
+    | 'reschedule_asked'
+    | 'upcoming';
 };
 
 @Injectable()
@@ -65,13 +70,27 @@ export class OwnerBookingsService {
       query = query.in('id', await this.refundProblemBookingIds());
     else query = query.neq('status', 'expired');
     // Each booking shows one status (2026-11-01), so a filter lists only the bookings that show it:
-    // "Booked" is confirmed and not started, "Needs outcome" is confirmed and started, and a
-    // booking whose refund failed shows under "Refund failed" only.
+    // "Booked" is confirmed, not started and not asked to move; "Reschedule asked" is confirmed,
+    // not started and asked to move; "Needs outcome" is confirmed and started; a booking whose
+    // refund failed shows under "Refund failed" only. "Upcoming" is every booking still to come
+    // (what the barber page and Shop settings link to, so they can be cancelled or moved).
     const now = new Date().toISOString();
     if (filters.status === 'needs_outcome')
       query = query.eq('status', 'confirmed').lte('starts_at', now);
     else if (filters.status === 'confirmed')
-      query = query.eq('status', 'confirmed').gt('starts_at', now);
+      query = query
+        .eq('status', 'confirmed')
+        .gt('starts_at', now)
+        .is('reschedule_requested_at', null);
+    else if (filters.status === 'reschedule_asked')
+      query = query
+        .eq('status', 'confirmed')
+        .gt('starts_at', now)
+        .not('reschedule_requested_at', 'is', null);
+    else if (filters.status === 'upcoming')
+      query = query
+        .in('status', ['pending_payment', 'confirmed'])
+        .gt('starts_at', now);
     else if (filters.status && filters.status !== 'refund_failed') {
       query = query.eq('status', filters.status);
       const failed = await this.refundProblemBookingIds();
