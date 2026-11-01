@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Alert } from "@/components/alert";
+import { Toast } from "@/components/toast";
 import { TextField } from "@/components/form-field";
 import { PasswordField } from "@/components/password-field";
 import { buttonClass } from "@/components/ui";
@@ -12,7 +12,7 @@ export function JoinForm({ token, email }: { token: string; email: string }) {
   const e = state?.errors ?? {};
   return (
     <form action={action} noValidate className="flex flex-col gap-4">
-      {e.form && <Alert variant="danger" role="alert">{e.form}</Alert>}
+      {e.form && <Toast variant="danger" role="alert" trigger={state}>{e.form}</Toast>}
       <TextField id="name" label="Full name" autoComplete="name" defaultValue={state?.values?.name} error={e.name} required />
       <TextField id="email" label="Email address" type="email" value={email} disabled readOnly
         helper="This is the email the owner invited" />

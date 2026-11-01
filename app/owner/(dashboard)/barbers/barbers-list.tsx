@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 import { CircleAlert } from "lucide-react";
-import { Alert } from "@/components/alert";
+import { Toast } from "@/components/toast";
 import { Dialog } from "@/components/dialog";
 import { TextField } from "@/components/form-field";
 import { PageHeader } from "@/components/owner/page-header";
@@ -75,15 +75,15 @@ export function BarbersList({ barbers, activeServiceCount, deactivatedName }: {
       />
 
       {notice?.kind === "deactivated" && (
-        <Alert title={`${notice.name} deactivated`}>
+        <Toast title={`${notice.name} deactivated`} trigger={notice}>
           {notice.name.split(" ")[0]} can’t log in and isn’t shown to customers. Past bookings stay in your records.
-        </Alert>
+        </Toast>
       )}
       {notice?.kind === "invite" && <InviteNotice notice={notice} />}
       {resendError && (
-        <Alert variant="warning" role="alert">
+        <Toast variant="warning" role="alert" trigger={resendError}>
           {resendError}
-        </Alert>
+        </Toast>
       )}
 
       <div className="flex flex-col gap-8">
@@ -208,7 +208,7 @@ function InviteDialog({ open, onClose, onSent }: { open: boolean; onClose: () =>
 function InviteNotice({ notice }: { notice: Extract<Notice, { kind: "invite" }> }) {
   const [copied, setCopied] = useState(false);
   return (
-    <Alert title={notice.title}>
+    <Toast title={notice.title} trigger={notice}>
       <p>
         The link expires on {expiry(notice.expiresAt)}. Any earlier link for {notice.email} no longer works.
       </p>
@@ -237,6 +237,6 @@ function InviteNotice({ notice }: { notice: Extract<Notice, { kind: "invite" }> 
           </button>
         </div>
       </div>
-    </Alert>
+    </Toast>
   );
 }

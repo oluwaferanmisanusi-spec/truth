@@ -50,7 +50,7 @@ async function Appointment({ params }: Pick<Props, "params">) {
       <StepBar title="Appointment" back={`/barber?date=${date}`} />
       <main className="flex flex-col gap-6 px-4 py-6">
         <div className="flex flex-col items-start gap-2">
-          <BookingStatusBadge status={a.status} />
+          <BookingStatusBadge status={a.status} startsAt={a.startsAt} />
           <h1 className="text-h1">{a.customerName}</h1>
         </div>
         <dl className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">

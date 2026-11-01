@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Alert } from "@/components/alert";
+import { Toast } from "@/components/toast";
 import { Dialog } from "@/components/dialog";
 import { RecordStatusBadge } from "@/components/status-badge";
 import { buttonClass } from "@/components/ui";
@@ -44,9 +45,9 @@ export function BarberStatusCard({ id, firstName, status, upcoming, bookingsHref
       <div><RecordStatusBadge status={status} /></div>
 
       {message && (
-        <Alert variant={message.ok ? "success" : "warning"} role={message.ok ? "status" : "alert"}>
+        <Toast variant={message.ok ? "success" : "warning"} role={message.ok ? "status" : "alert"} trigger={message}>
           {message.text}
-        </Alert>
+        </Toast>
       )}
 
       <div>

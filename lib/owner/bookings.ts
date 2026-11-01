@@ -15,18 +15,15 @@ export type BookingFilters = {
 
 /**
  * Statuses the owner can filter by. Expired holds only show under "Refund failed" (a late
- * payment refunded). "Needs outcome" is confirmed appointments that have started without the
- * barber marking them; "Refund failed" is bookings with a refund that didn't go through.
+ * payment refunded). "Booked" is confirmed and not started; "Needs outcome" is confirmed and
+ * started without the barber marking it; "Refund failed" is bookings with a refund that didn't
+ * go through. Each booking shows (and filters as) one status.
  */
 export const FILTER_STATUSES = [
   "pending_payment", "confirmed", "completed", "no_show", "cancelled", "needs_outcome", "refund_failed",
 ] as const;
 type FilterStatus = (typeof FILTER_STATUSES)[number];
-const FILTER_LABELS: Record<FilterStatus, string> = {
-  ...BOOKING_STATUS_LABELS,
-  needs_outcome: "Needs outcome",
-  refund_failed: "Refund failed",
-};
+const FILTER_LABELS = BOOKING_STATUS_LABELS;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

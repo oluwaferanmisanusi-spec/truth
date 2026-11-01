@@ -5,7 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { z } from 'zod';
-import type { OwnerService, OwnerServiceDetail } from '../contracts/owner.js';
+import type {
+  OwnerService,
+  OwnerServiceDetail,
+  ServiceBarber,
+} from '../contracts/owner.js';
 import { SupabaseService } from '../supabase/supabase.service.js';
 
 export const BUFFER_OPTIONS = [0, 5, 10, 15, 20, 30];
@@ -56,11 +60,13 @@ export const ServiceBody = z.object({
             ),
         ),
     ),
+  /** Active barbers who offer it (the picker lists active barbers only; others keep their link). */
+  barberIds: z.array(z.guid()).max(100).default([]),
 });
 export type ServiceBody = z.output<typeof ServiceBody>;
 
 const SELECT =
-  'id, name, description, duration_minutes, buffer_minutes, price_kobo, is_active, barber_services(barbers(full_name, status, sort_order))';
+  'id, name, description, duration_minutes, buffer_minutes, price_kobo, is_active, barber_services(barber_id, barbers(full_name, status, sort_order))';
 const firstName = (fullName: string) => fullName.split(/\s+/)[0];
 
 type Row = {
@@ -72,6 +78,7 @@ type Row = {
   price_kobo: number;
   is_active: boolean;
   barber_services: {
+    barber_id: string;
     barbers: {
       full_name: string | null;
       status: string;
@@ -110,9 +117,26 @@ export class OwnerServicesService {
     return data.map(toService);
   }
 
+  /** Active barbers for the Add service form: none offer it yet. */
+  async barberOptions(): Promise<ServiceBarber[]> {
+    return (await this.activeBarbers()).map((b) => ({ ...b, offered: false }));
+  }
+
+  private async activeBarbers() {
+    const { data, error } = await this.supabase.admin
+      .from('barbers')
+      .select('id, full_name')
+      .eq('status', 'active')
+      .order('sort_order');
+    if (error) throw error;
+    return data.flatMap((b) =>
+      b.full_name ? [{ id: b.id, name: b.full_name }] : [],
+    );
+  }
+
   async get(id: string): Promise<OwnerServiceDetail> {
     const db = this.supabase.admin;
-    const [service, upcoming] = await Promise.all([
+    const [service, upcoming, barbers] = await Promise.all([
       db.from('services').select(SELECT).eq('id', id).maybeSingle(),
       db
         .from('bookings')
@@ -120,13 +144,18 @@ export class OwnerServicesService {
         .eq('service_id', id)
         .in('status', ['pending_payment', 'confirmed'])
         .gt('starts_at', new Date().toISOString()),
+      this.activeBarbers(),
     ]);
     if (service.error) throw service.error;
     if (upcoming.error) throw upcoming.error;
     if (!service.data) throw new NotFoundException('Service not found');
+    const offered = new Set(
+      service.data.barber_services.map((bs) => bs.barber_id),
+    );
     return {
       ...toService(service.data),
       upcomingBookings: upcoming.count ?? 0,
+      barbers: barbers.map((b) => ({ ...b, offered: offered.has(b.id) })),
     };
   }
 
@@ -172,7 +201,34 @@ export class OwnerServicesService {
       });
     }
     if (result.error) throw result.error;
+    await this.setBarbers(result.data!.id, body.barberIds);
     return { id: result.data!.id };
+  }
+
+  /**
+   * Ticked active barbers offer the service, unticked active ones stop. Barbers who aren't
+   * active aren't in the picker, so their link is left alone (the barber page handles it).
+   */
+  private async setBarbers(serviceId: string, selected: string[]) {
+    const db = this.supabase.admin;
+    const active = (await this.activeBarbers()).map((b) => b.id);
+    const chosen = [...new Set(selected)].filter((id) => active.includes(id));
+    const rest = active.filter((id) => !chosen.includes(id));
+    if (chosen.length) {
+      const { error } = await db.from('barber_services').upsert(
+        chosen.map((barber_id) => ({ barber_id, service_id: serviceId })),
+        { onConflict: 'barber_id,service_id', ignoreDuplicates: true },
+      );
+      if (error) throw error;
+    }
+    if (rest.length) {
+      const { error } = await db
+        .from('barber_services')
+        .delete()
+        .eq('service_id', serviceId)
+        .in('barber_id', rest);
+      if (error) throw error;
+    }
   }
 
   /** Deactivate (5.7) or turn a service back on. Existing bookings are untouched. */

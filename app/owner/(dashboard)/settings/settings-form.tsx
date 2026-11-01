@@ -6,6 +6,7 @@ import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
 import { CircleAlert } from "lucide-react";
 import { Alert } from "@/components/alert";
+import { Toast } from "@/components/toast";
 import { Dialog } from "@/components/dialog";
 import { SelectFormField, TextField } from "@/components/form-field";
 import { DateField } from "@/components/owner/filter-field";
@@ -32,9 +33,9 @@ export function ShopSettingsForm({ hours, timeZone, timeZones, holidays, clashes
   return (
     <div className="flex w-180 max-w-full flex-col gap-6">
       {state?.saved && !pending && (
-        <Alert title="Changes saved">New opening hours apply to slots from now on. Existing bookings stay as they are.</Alert>
+        <Toast title="Changes saved" trigger={state}>New opening hours apply to slots from now on. Existing bookings stay as they are.</Toast>
       )}
-      {state?.error && <Alert variant="warning" role="alert">{state.error}</Alert>}
+      {state?.error && <Toast variant="warning" role="alert" trigger={state}>{state.error}</Toast>}
 
       <form id="settings-form" action={action} noValidate className="flex flex-col gap-6">
         <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-6" aria-labelledby="hours-heading">
@@ -110,12 +111,12 @@ function HolidaysCard({ holidays, clashes, today }: { holidays: Holiday[]; clash
       </div>
 
       {notice?.title && (
-        <Alert title={notice.title}>
+        <Toast title={notice.title} trigger={notice}>
           {notice.message}
           {notice.link && <> <Link href={notice.link.href} className={linkClass}>{notice.link.text}</Link></>}
-        </Alert>
+        </Toast>
       )}
-      {notice?.error && <Alert variant="warning" role="alert">{notice.error}</Alert>}
+      {notice?.error && <Toast variant="warning" role="alert" trigger={notice}>{notice.error}</Toast>}
 
       {holidays.length > 0 ? (
         <ul className="flex flex-col">
@@ -158,7 +159,7 @@ function HolidaysCard({ holidays, clashes, today }: { holidays: Holiday[]; clash
           {adding ? "Adding…" : "Add holiday"}
         </button>
       </form>
-      {addState?.error && <Alert variant="warning" role="alert">{addState.error}</Alert>}
+      {addState?.error && <Toast variant="warning" role="alert" trigger={addState}>{addState.error}</Toast>}
 
       <Dialog
         open={!!removing}
