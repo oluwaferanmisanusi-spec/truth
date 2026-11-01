@@ -3,7 +3,7 @@
 // The account forms (Figma 3.1–3.5). Each posts to a server action and shows its errors.
 import { useActionState } from "react";
 import Link from "next/link";
-import { Alert } from "@/components/alert";
+import { Toast } from "@/components/toast";
 import { TextField } from "@/components/form-field";
 import { PasswordField } from "@/components/password-field";
 import { buttonClass } from "@/components/ui";
@@ -18,7 +18,7 @@ export function LoginForm({ next, hold, links }: { next?: string; hold?: string;
   return (
     <form action={action} noValidate className="flex flex-col gap-4">
       {hidden({ next, hold })}
-      {e.form && <Alert variant="danger" role="alert">{e.form}</Alert>}
+      {e.form && <Toast variant="danger" role="alert" trigger={state}>{e.form}</Toast>}
       <TextField id="email" label="Email address" type="email" autoComplete="email" inputMode="email"
         defaultValue={state?.values?.email} error={e.email} required />
       <PasswordField id="password" label="Password" autoComplete="current-password" error={e.password} />
@@ -39,7 +39,7 @@ export function SignupForm({ next, hold, loginHref }: { next?: string; hold?: st
   return (
     <form action={action} noValidate className="flex flex-col gap-4">
       {hidden({ next, hold })}
-      {e.form && <Alert variant="danger" role="alert">{e.form}</Alert>}
+      {e.form && <Toast variant="danger" role="alert" trigger={state}>{e.form}</Toast>}
       <TextField id="name" label="Full name" autoComplete="name" defaultValue={state?.values?.name} error={e.name} required />
       <TextField id="email" label="Email address" type="email" autoComplete="email" inputMode="email"
         defaultValue={state?.values?.email} error={e.email} required />

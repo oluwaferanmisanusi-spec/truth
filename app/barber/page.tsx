@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { CalendarDays, CalendarOff, Store } from "lucide-react";
 import type { BarberDay, OutcomeDue, ScheduleAppointment, ScheduleBlock } from "@api/barber";
-import { Alert } from "@/components/alert";
+import { Toast } from "@/components/toast";
 import { BarberBar, PeriodNav, ViewTabs } from "@/components/barber/schedule-nav";
 import { OutcomesBanner } from "@/components/barber/outcomes-banner";
 import { RemoveBlockButton } from "@/components/barber/remove-block";
@@ -117,7 +117,7 @@ function AppointmentRow({ item }: { item: ScheduleAppointment }) {
             {item.serviceName} · {item.durationMinutes} min
           </span>
         </div>
-        <BookingStatusBadge status={item.status} />
+        <BookingStatusBadge status={item.status} startsAt={item.startsAt} />
       </Link>
     </li>
   );
@@ -172,34 +172,34 @@ function Empty({ day, past }: { day: BarberDay; past: boolean }) {
 function Notice({ query }: { query: Awaited<Props["searchParams"]> }) {
   if (one(query.joined)) {
     return (
-      <Alert variant="success" title="You’ve joined Truth">
+      <Toast variant="success" title="You’ve joined Truth">
         This is your schedule. New bookings show up here as customers make them.
-      </Alert>
+      </Toast>
     );
   }
   const blocked = one(query.blocked)?.match(/^(\d{4}-\d{2}-\d{2})_(\d{2}:\d{2})_(\d{2}:\d{2})$/);
   if (blocked && isIsoDate(blocked[1])) {
     return (
-      <Alert variant="success" title="Time blocked">
+      <Toast variant="success" title="Time blocked">
         Customers can’t book you from {blocked[2]} to {blocked[3]} on {dayLabel(blocked[1])}.
-      </Alert>
+      </Toast>
     );
   }
   const leave = one(query.leave)?.match(/^(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})_\d+$/);
   if (leave && isIsoDate(leave[1]) && isIsoDate(leave[2])) {
     return (
-      <Alert variant="success" title="Leave blocked">
+      <Toast variant="success" title="Leave blocked">
         Customers can’t book you {leave[1] === leave[2] ? `on ${dayLabel(leave[1])}` : `from ${dayRange(leave[1], leave[2])}`}.
-      </Alert>
+      </Toast>
     );
   }
   const removed = one(query.removed);
   const times = removed?.match(/^(\d{2}:\d{2})_(\d{2}:\d{2})$/);
   if (times || removed === "day") {
     return (
-      <Alert variant="success" title="Block removed">
+      <Toast variant="success" title="Block removed">
         {times ? `${times[1]} to ${times[2]}` : "That day"} is now open for bookings.
-      </Alert>
+      </Toast>
     );
   }
   return null;

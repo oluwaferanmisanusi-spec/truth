@@ -31,7 +31,7 @@ export type BookingFilters = {
   barber?: string;
   service?: string;
   /**
-   * needs_outcome: confirmed appointments that have started with no outcome recorded.
+   * confirmed: booked and not started yet. needs_outcome: confirmed and started, no outcome recorded.
    * refund_failed: a refund owed on it didn't go through (includes refunded late payments).
    */
   status?: BookingStatus | 'needs_outcome' | 'refund_failed';
@@ -64,16 +64,23 @@ export class OwnerBookingsService {
       // A late payment that was refunded sits on an expired hold, so this one shows those too.
       query = query.in('id', await this.refundProblemBookingIds());
     else query = query.neq('status', 'expired');
+    // Each booking shows one status (2026-11-01), so a filter lists only the bookings that show it:
+    // "Booked" is confirmed and not started, "Needs outcome" is confirmed and started, and a
+    // booking whose refund failed shows under "Refund failed" only.
+    const now = new Date().toISOString();
     if (filters.status === 'needs_outcome')
-      query = query
-        .eq('status', 'confirmed')
-        .lte('starts_at', new Date().toISOString());
-    else if (filters.status && filters.status !== 'refund_failed')
+      query = query.eq('status', 'confirmed').lte('starts_at', now);
+    else if (filters.status === 'confirmed')
+      query = query.eq('status', 'confirmed').gt('starts_at', now);
+    else if (filters.status && filters.status !== 'refund_failed') {
       query = query.eq('status', filters.status);
+      const failed = await this.refundProblemBookingIds();
+      if (failed.length) query = query.not('id', 'in', `(${failed.join(',')})`);
+    }
 
     const { data, error } = await query;
     if (error) throw error;
-    const now = Date.now();
+    const nowMs = Date.parse(now);
     return data.map((b) => {
       const failed = b.payments
         .flatMap((p) => p.refunds)
@@ -89,7 +96,8 @@ export class OwnerBookingsService {
         status: b.status,
         barberName: b.barbers?.full_name ?? '',
         // Owners can cancel confirmed bookings that haven't started (the database re-checks this).
-        cancellable: b.status === 'confirmed' && Date.parse(b.starts_at) > now,
+        cancellable:
+          b.status === 'confirmed' && Date.parse(b.starts_at) > nowMs,
         rescheduleAsked:
           b.status === 'confirmed' && b.reschedule_requested_at !== null,
         refundFailed: failed

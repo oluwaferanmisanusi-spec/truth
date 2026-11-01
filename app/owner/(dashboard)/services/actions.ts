@@ -13,7 +13,7 @@ export type ServiceFormValues = {
 };
 
 export type ServiceFormState =
-  | { errors: Partial<Record<keyof ServiceFormValues | "form", string>>; values: ServiceFormValues }
+  | { errors: Partial<Record<keyof ServiceFormValues | "form", string>>; values: ServiceFormValues; barberIds: string[] }
   | undefined;
 
 /** Add (no id) or edit (with id) a service (Figma 5.6 / 5.6b). The API checks every field. */
@@ -27,19 +27,21 @@ export async function saveService(_prev: ServiceFormState, formData: FormData): 
     price: String(formData.get("price") ?? "").trim(),
   };
 
+  const barberIds = formData.getAll("barberIds").map(String);
+
   try {
     await api(id ? `/owner/services/${encodeURIComponent(id)}` : "/owner/services", {
       method: id ? "PUT" : "POST",
-      body: values,
+      body: { ...values, barberIds },
     });
   } catch (error) {
     unstable_rethrow(error);
     if (error instanceof ApiError && Object.keys(error.fieldErrors).length) {
-      return { errors: error.fieldErrors, values };
+      return { errors: error.fieldErrors, values, barberIds };
     }
-    if (error instanceof ApiError && error.status === 404) return { errors: { form: "This service couldn’t be found." }, values };
+    if (error instanceof ApiError && error.status === 404) return { errors: { form: "This service couldn’t be found." }, values, barberIds };
     console.error("saveService failed", error);
-    return { errors: { form: "Something went wrong and the service wasn’t saved. Please try again." }, values };
+    return { errors: { form: "Something went wrong and the service wasn’t saved. Please try again." }, values, barberIds };
   }
   redirect("/owner/services");
 }

@@ -5,7 +5,7 @@
 import { useActionState, useState, useTransition } from "react";
 import { CircleAlert } from "lucide-react";
 import type { Team } from "@api/owner";
-import { Alert } from "@/components/alert";
+import { Toast } from "@/components/toast";
 import { Dialog } from "@/components/dialog";
 import { TextField } from "@/components/form-field";
 import { PageHeader } from "@/components/owner/page-header";
@@ -73,8 +73,8 @@ export function ManagersList({ team, isOwner }: { team: Team; isOwner: boolean }
       />
 
       {notice?.kind === "invite" && <InviteNotice notice={notice} />}
-      {notice?.kind === "done" && <Alert>{notice.text}</Alert>}
-      {error && <Alert variant="warning" role="alert">{error}</Alert>}
+      {notice?.kind === "done" && <Toast trigger={notice}>{notice.text}</Toast>}
+      {error && <Toast variant="warning" role="alert" trigger={error}>{error}</Toast>}
 
       <div className="flex flex-col gap-8">
         <div className="overflow-hidden rounded-lg border border-border bg-surface">
@@ -246,7 +246,7 @@ function InviteDialog({ open, onClose, onSent }: { open: boolean; onClose: () =>
 function InviteNotice({ notice }: { notice: Extract<Notice, { kind: "invite" }> }) {
   const [copied, setCopied] = useState(false);
   return (
-    <Alert title={notice.title}>
+    <Toast title={notice.title} trigger={notice}>
       <p>The link expires on {expiry(notice.expiresAt)}. Any earlier link for {notice.email} no longer works.</p>
       <div className="mt-3 flex flex-col gap-2 rounded-md bg-surface p-3">
         {notice.emailed ? (
@@ -271,6 +271,6 @@ function InviteNotice({ notice }: { notice: Extract<Notice, { kind: "invite" }> 
           </button>
         </div>
       </div>
-    </Alert>
+    </Toast>
   );
 }

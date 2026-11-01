@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Alert } from "@/components/alert";
+import { Toast } from "@/components/toast";
 import { TextField } from "@/components/form-field";
 import { buttonClass } from "@/components/ui";
 import { setNewPassword } from "./actions";
@@ -12,7 +12,7 @@ export function NewPasswordForm({ token }: { token: string }) {
 
   return (
     <form action={action} noValidate className="flex flex-col gap-6">
-      {errors.form && <Alert variant="warning" role="alert">{errors.form}</Alert>}
+      {errors.form && <Toast variant="warning" role="alert" trigger={state}>{errors.form}</Toast>}
       <div className="flex flex-col gap-4">
         <TextField id="password" label="New password" type="password" autoComplete="new-password"
           helper="At least 8 characters" error={errors.password} required />

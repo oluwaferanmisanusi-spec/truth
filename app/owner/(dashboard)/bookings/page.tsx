@@ -62,17 +62,23 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
-        <table className="w-full table-fixed border-collapse text-left">
-          {/* Customer takes what's left (it truncates), so the actions keep their room. */}
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+        {/* The room between Status and the row's action is what gives as the window narrows (2026-11-01):
+            every other column keeps its width, and once that gap is down to 40px the table stops
+            shrinking and scrolls sideways instead. min-w = the fixed columns (940px) + 32px + the widest
+            action (Cancel 70px, "Mark as refunded" 153px) + 20px. Status fits "Reschedule asked" with 8px
+            to spare, so the closest a status and its action get is 8 + 32 = 40px. */}
+        <table
+          className={`w-full table-fixed border-collapse text-left ${bookings.some((b) => b.refundFailed) ? "min-w-287" : "min-w-266"}`}
+        >
           <colgroup>
-            <col className="w-40" />
-            <col />
+            <col className="w-36" />
+            <col className="w-64" />
             <col className="w-40" />
             <col className="w-36" />
-            <col className="w-29" />
-            <col className="w-36.5" />
-            <col className="w-40" />
+            <col className="w-24" />
+            <col className="w-35" />
+            <col />
           </colgroup>
           <thead className="bg-surface-muted text-caption font-medium text-ink-muted">
             <tr className="h-10 border-b border-border">
@@ -82,7 +88,7 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
               <th scope="col" className="px-2 py-2 font-medium">Barber</th>
               <th scope="col" className="px-2 py-2 text-right font-medium">Amount</th>
               <th scope="col" className="px-2 py-2 font-medium">Status</th>
-              <th scope="col" className="py-2 pr-5 pl-2"><span className="sr-only">Actions</span></th>
+              <th scope="col" className="py-2 pr-5 pl-8"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody className="text-small">
@@ -108,21 +114,14 @@ async function BookingsResults({ searchParams }: { searchParams: PageProps<"/own
                   <td className="px-2 py-3">{barberName}</td>
                   <td className="px-2 py-3 text-right font-medium tabular-nums">{formatNaira(b.priceKobo)}</td>
                   <td className="px-2 py-3">
-                    <span className="flex flex-col items-start gap-1">
-                      <BookingStatusBadge status={b.status} />
-                      {b.rescheduleAsked && (
-                        <span className="inline-flex rounded-full bg-warning-tint px-2 py-1 text-caption font-medium whitespace-nowrap text-warning">
-                          Reschedule asked
-                        </span>
-                      )}
-                      {b.refundFailed && (
-                        <span className="inline-flex rounded-full bg-danger-tint px-2 py-1 text-caption font-medium whitespace-nowrap text-danger">
-                          Refund failed
-                        </span>
-                      )}
-                    </span>
+                    <BookingStatusBadge
+                      status={b.status}
+                      startsAt={b.startsAt}
+                      rescheduleAsked={b.rescheduleAsked}
+                      refundFailed={b.refundFailed !== null}
+                    />
                   </td>
-                  <td className="py-3 pr-5 pl-2 text-right">
+                  <td className="py-3 pr-5 pl-8 text-right">
                     {b.refundFailed && (
                       <MarkRefundedButton refundId={b.refundFailed.refundId} customerName={b.customerName}
                         amount={formatNaira(b.refundFailed.amountKobo)} />

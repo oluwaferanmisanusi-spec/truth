@@ -62,6 +62,16 @@
   --radius-full: 999px;
 
   --shadow-modal: 0 12px 16px rgba(20, 23, 31, 0.16);
+
+  /* Slide-down notices (components/toast.tsx). */
+  --animate-toast-in: toast-in 300ms ease-out;
+  --animate-toast-out: toast-out 200ms ease-in forwards;
+  @keyframes toast-in {
+    from { transform: translateY(calc(-100% - 1rem)); opacity: 0; }
+  }
+  @keyframes toast-out {
+    to { transform: translateY(calc(-100% - 1rem)); opacity: 0; }
+  }
 }
 
 /* In the base layer so utility classes (e.g. font-sans on a heading) can override. */
@@ -76,5 +86,18 @@
 
   h1, h2 {
     font-family: var(--font-display);
+  }
+
+  /* Anything clickable shows the pointer (2026-11-01); disabled ones keep the arrow. */
+  :where(
+    button, [role="button"], [role="switch"], [role="tab"], [role="menuitem"], [role="option"],
+    a[href], summary, select, label[for],
+    input:is([type="checkbox"], [type="radio"], [type="submit"], [type="button"], [type="date"], [type="time"], [type="file"]),
+    label:has(input:is([type="checkbox"], [type="radio"]))
+  ):not(:disabled, [aria-disabled="true"]) {
+    cursor: pointer;
+  }
+  ::-webkit-calendar-picker-indicator {
+    cursor: pointer;
   }
 }

@@ -36,6 +36,7 @@ import type {
   OwnerBooking,
   OwnerService,
   OwnerServiceDetail,
+  ServiceBarber,
   RefundProblems,
   RescheduleAsked,
   ShopSettings,
@@ -151,6 +152,12 @@ export class OwnerServicesController {
   @Get()
   list(): Promise<OwnerService[]> {
     return this.services.list();
+  }
+
+  /** Declared before :id so "barbers" isn't read as a service id. */
+  @Get('barbers')
+  barbers(): Promise<ServiceBarber[]> {
+    return this.services.barberOptions();
   }
 
   @Get(':id')

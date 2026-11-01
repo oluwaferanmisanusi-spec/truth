@@ -4,21 +4,46 @@ import type { Database } from "@/lib/supabase/database.types";
 
 export type BookingStatus = Database["public"]["Enums"]["booking_status"];
 
-const BOOKING_STATUS: Record<BookingStatus, { label: string; className: string }> = {
+/** What a booking is shown as: its stored status, or one of three that depend on its state (2026-11-01). */
+export type DisplayStatus = BookingStatus | "needs_outcome" | "reschedule_asked" | "refund_failed";
+
+const BOOKING_STATUS: Record<DisplayStatus, { label: string; className: string }> = {
   pending_payment: { label: "Pending payment", className: "bg-warning-tint text-warning" },
   expired: { label: "Expired", className: "bg-neutral-tint text-ink-muted" },
-  confirmed: { label: "Confirmed", className: "bg-primary-tint text-primary" },
+  confirmed: { label: "Booked", className: "bg-primary-tint text-primary" },
   completed: { label: "Completed", className: "bg-success-tint text-success" },
   no_show: { label: "No-show", className: "bg-danger-tint text-danger" },
   cancelled: { label: "Cancelled", className: "bg-neutral-tint text-ink-muted" },
+  needs_outcome: { label: "Needs outcome", className: "bg-warning-tint text-warning" },
+  reschedule_asked: { label: "Reschedule asked", className: "bg-warning-tint text-warning" },
+  refund_failed: { label: "Refund failed", className: "bg-danger-tint text-danger" },
 };
 
 export const BOOKING_STATUS_LABELS = Object.fromEntries(
   Object.entries(BOOKING_STATUS).map(([status, { label }]) => [status, label]),
-) as Record<BookingStatus, string>;
+) as Record<DisplayStatus, string>;
 
-export function BookingStatusBadge({ status }: { status: BookingStatus }) {
-  const { label, className } = BOOKING_STATUS[status];
+/**
+ * One status per booking, the most pressing first: a refund that didn't go through, an
+ * appointment that has started without an outcome (pass `startsAt`; customers don't see this
+ * one), the shop having asked to reschedule, then the stored status.
+ */
+export function displayStatus({ status, startsAt, rescheduleAsked, refundFailed }: {
+  status: BookingStatus;
+  startsAt?: string;
+  rescheduleAsked?: boolean;
+  refundFailed?: boolean;
+}): DisplayStatus {
+  if (refundFailed) return "refund_failed";
+  if (status === "confirmed") {
+    if (startsAt && Date.parse(startsAt) <= Date.now()) return "needs_outcome";
+    if (rescheduleAsked) return "reschedule_asked";
+  }
+  return status;
+}
+
+export function BookingStatusBadge(booking: Parameters<typeof displayStatus>[0]) {
+  const { label, className } = BOOKING_STATUS[displayStatus(booking)];
   return (
     <span className={`inline-flex rounded-full px-2 py-1 text-caption font-medium whitespace-nowrap ${className}`}>
       {label}

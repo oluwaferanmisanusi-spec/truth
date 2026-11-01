@@ -7,7 +7,7 @@
 import { useActionState, useState } from "react";
 import { Calendar, CircleAlert, Clock } from "lucide-react";
 import type { ShopHours } from "@api/barber";
-import { Alert } from "@/components/alert";
+import { Toast } from "@/components/toast";
 import { TextField } from "@/components/form-field";
 import { PickerButton, pickerInputClass } from "@/components/picker-button";
 import { BottomBar } from "@/components/shop/bars";
@@ -68,9 +68,9 @@ export function BlockForm({ back, start, today, hours }: Props) {
         </div>
 
         {state?.alert && (
-          <Alert variant="danger" role="alert" title={state.alert.title}>
+          <Toast variant="danger" role="alert" title={state.alert.title} trigger={state}>
             {state.alert.message}
-          </Alert>
+          </Toast>
         )}
 
         <fieldset className="grid grid-cols-2 gap-1 rounded-md bg-surface-muted p-1">

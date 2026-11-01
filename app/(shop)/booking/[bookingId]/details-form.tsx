@@ -6,6 +6,7 @@ import { useActionState, type ReactNode } from "react";
 import Link from "next/link";
 import { UserRound } from "lucide-react";
 import { Alert } from "@/components/alert";
+import { Toast } from "@/components/toast";
 import { LogoutButton } from "@/components/shop/logout-button";
 import { BottomBar } from "@/components/shop/bars";
 import { TextField } from "@/components/form-field";
@@ -39,14 +40,14 @@ export function DetailsForm({ bookingId, priceLabel, progress, summary, defaults
       <div className="flex flex-col gap-6 px-4 py-6">
         {progress}
         {fieldErrors > 0 && (
-          <Alert variant="danger" role="alert" title="Check your details">
+          <Toast variant="danger" role="alert" title="Check your details" trigger={state}>
             {fieldErrors === 1 ? "1 field needs" : `${fieldErrors} fields need`} fixing before you can pay.
-          </Alert>
+          </Toast>
         )}
         {errors.form && (
-          <Alert variant="danger" role="alert">
+          <Toast variant="danger" role="alert" trigger={state}>
             {errors.form}
-          </Alert>
+          </Toast>
         )}
         <section aria-labelledby="booking-heading" className="flex flex-col gap-3">
           <h2 id="booking-heading" className="text-h2">Your booking</h2>

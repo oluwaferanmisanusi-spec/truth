@@ -97,7 +97,13 @@ export type OwnerService = {
   offeredBy: string[];
 };
 
-export type OwnerServiceDetail = OwnerService & { upcomingBookings: number };
+/** An active barber the service form can tick (the same link the barber page changes). */
+export type ServiceBarber = { id: string; name: string; offered: boolean };
+
+export type OwnerServiceDetail = OwnerService & {
+  upcomingBookings: number;
+  barbers: ServiceBarber[];
+};
 
 export type BarberStatus = 'invited' | 'active' | 'inactive';
 

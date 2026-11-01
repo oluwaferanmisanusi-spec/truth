@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/owner/page-header";
-import { BUFFER_OPTIONS, DURATION_OPTIONS, getService, joinNames } from "@/lib/owner/services";
+import { BUFFER_OPTIONS, DURATION_OPTIONS, getService } from "@/lib/owner/services";
 import { ServiceForm } from "../service-form";
 import { ServiceActiveCard } from "../active-toggle";
 
@@ -26,8 +26,8 @@ async function EditService({ params }: { params: PageProps<"/owner/services/[id]
   if (!service) notFound();
 
   const offeredByNote = service.offeredBy.length
-    ? `Offered by ${joinNames(service.offeredBy)}. Change this on each barber’s page.`
-    : "No barber offers it yet, so customers can’t book it. Choose who offers it on each barber’s page.";
+    ? "You can also change this on each barber’s page."
+    : "No barber offers it yet, so customers can’t book it. Tick who offers it here, or on each barber’s page.";
 
   return (
     <>
@@ -35,7 +35,10 @@ async function EditService({ params }: { params: PageProps<"/owner/services/[id]
         title={service.name}
         description="Edit this service. Changes apply to new bookings only; existing bookings keep their price and time."
       />
+      {/* Starts fresh when the saved service changed elsewhere, e.g. a barber page ticked it
+          (Next keeps recently visited pages, and their form state, alive). */}
       <ServiceForm
+        key={JSON.stringify(service)}
         id={service.id}
         initial={{
           name: service.name,
@@ -46,6 +49,7 @@ async function EditService({ params }: { params: PageProps<"/owner/services/[id]
         }}
         durationOptions={DURATION_OPTIONS}
         bufferOptions={BUFFER_OPTIONS}
+        barbers={service.barbers}
         offeredByNote={offeredByNote}
         submitLabel="Save changes"
       />

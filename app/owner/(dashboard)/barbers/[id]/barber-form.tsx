@@ -2,8 +2,8 @@
 
 // Figma 5.10 Barber page: Services card + Working hours card, saved together.
 import Link from "next/link";
-import { useActionState } from "react";
-import { Alert } from "@/components/alert";
+import { Fragment, useActionState } from "react";
+import { Toast } from "@/components/toast";
 import { Checkbox } from "@/components/controls";
 import { HoursEditor, type HoursDay } from "@/components/owner/hours-editor";
 import { buttonClass } from "@/components/ui";
@@ -22,41 +22,49 @@ export function BarberForm({ id, firstName, services, hours }: {
     <form action={action} className="flex w-180 max-w-full flex-col gap-6" noValidate>
       <input type="hidden" name="id" value={id} />
 
-      {state?.saved && !pending && <Alert title="Changes saved">Customers see the new services and hours straight away.</Alert>}
+      {state?.saved && !pending && (
+        <Toast title="Changes saved" trigger={state}>Customers see the new services and hours straight away.</Toast>
+      )}
       {state?.error && (
-        <Alert variant="warning" role="alert">
+        <Toast variant="warning" role="alert" trigger={state}>
           {state.error}
-        </Alert>
+        </Toast>
       )}
 
-      <fieldset className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-6">
-        <legend className="contents">
-          <span className="flex flex-col gap-1">
-            <span className="font-display text-h2 font-semibold">Services</span>
-            <span className="text-small text-ink-muted">Customers can only book {who} for the services ticked here.</span>
-          </span>
-        </legend>
-        <div className="flex flex-wrap gap-x-6">
-          {services.map((s) => (
-            <Checkbox key={s.id} name="service" value={s.id} defaultChecked={s.offered}>
-              {s.name}
-              {!s.isActive && <span className="text-small text-ink-muted"> (inactive service)</span>}
-            </Checkbox>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-6">
-        <legend className="contents">
-          <span className="flex flex-col gap-1">
-            <span className="font-display text-h2 font-semibold">Working hours</span>
-            <span className="text-small text-ink-muted">
-              {firstName || "They"} can only be booked inside both these hours and the shop’s opening hours.
+      {/* Next keeps recently visited pages alive, ticked boxes included. Keyed on the saved data, the
+          fields start again from it when it changed elsewhere (e.g. a service form ticked this barber),
+          while the "Changes saved" notice above survives our own save. */}
+      <Fragment key={JSON.stringify([services, hours])}>
+        <fieldset className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-6">
+          <legend className="contents">
+            <span className="flex flex-col gap-1">
+              <span className="font-display text-h2 font-semibold">Services</span>
+              <span className="text-small text-ink-muted">Customers can only book {who} for the services ticked here.</span>
             </span>
-          </span>
-        </legend>
-        <HoursEditor initial={hours} dayErrors={state?.dayErrors} switchLabel={(day) => `${day} working`} />
-      </fieldset>
+          </legend>
+          <div className="flex flex-wrap gap-x-6">
+            {services.map((s) => (
+              <Checkbox key={s.id} name="service" value={s.id} defaultChecked={s.offered}>
+                {s.name}
+                {!s.isActive && <span className="text-small text-ink-muted"> (inactive service)</span>}
+              </Checkbox>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-6">
+          <legend className="contents">
+            <span className="flex flex-col gap-1">
+              <span className="font-display text-h2 font-semibold">Working hours</span>
+              <span className="text-small text-ink-muted">
+                {firstName || "They"} can only be booked inside both these hours and the shop’s opening hours.
+              </span>
+            </span>
+          </legend>
+          <HoursEditor initial={hours} dayErrors={state?.dayErrors} switchLabel={(day) => `${day} working`} />
+        </fieldset>
+
+      </Fragment>
 
       <div className="flex gap-3">
         <button type="submit" className={buttonClass.primary} disabled={pending}>
