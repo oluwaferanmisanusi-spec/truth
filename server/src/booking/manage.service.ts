@@ -56,7 +56,7 @@ export class ManageService {
     const { data, error } = await this.supabase.admin
       .from('bookings')
       .select(
-        'id, status, service_name, price_kobo, starts_at, ends_at, barbers!bookings_barber_id_fkey(full_name)',
+        'id, status, service_name, price_kobo, starts_at, ends_at, reschedule_requested_at, barbers!bookings_barber_id_fkey(full_name)',
       )
       .eq('customer_id', customerId)
       .is('reschedule_of', null)
@@ -74,6 +74,10 @@ export class ManageService {
       priceKobo: b.price_kobo,
       startsAt: b.starts_at,
       barberName: b.barbers?.full_name ?? '',
+      rescheduleAsked:
+        b.status === 'confirmed' &&
+        b.reschedule_requested_at !== null &&
+        Date.parse(b.starts_at) > now,
     });
     return {
       upcoming: data.filter(isUpcoming).map(item),

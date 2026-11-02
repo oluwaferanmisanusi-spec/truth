@@ -107,7 +107,10 @@ export type MyBookings = {
 export type BookingListItem = Pick<
   ManagedBooking,
   'id' | 'status' | 'serviceName' | 'priceKobo' | 'startsAt' | 'barberName'
->;
+> & {
+  /** The shop asked them to move it and it hasn't started: shown as "Reschedule asked". */
+  rescheduleAsked: boolean;
+};
 
 /** A new time held while rescheduling (Figma 3.15). */
 export type RescheduleHold = {

@@ -136,7 +136,7 @@ export class BarberScheduleService {
       this.supabase.admin
         .from('bookings')
         .select(
-          'id, starts_at, ends_at, customer_name, service_name, duration_minutes, status',
+          'id, starts_at, ends_at, customer_name, service_name, duration_minutes, status, reschedule_requested_at',
         )
         .eq('id', id)
         .eq('barber_id', barberId)
@@ -196,7 +196,7 @@ export class BarberScheduleService {
       db
         .from('bookings')
         .select(
-          'id, starts_at, ends_at, customer_name, service_name, duration_minutes, status',
+          'id, starts_at, ends_at, customer_name, service_name, duration_minutes, status, reschedule_requested_at',
         )
         .eq('barber_id', barberId)
         .is('reschedule_of', null)
@@ -285,6 +285,7 @@ type BookingRow = {
   service_name: string;
   duration_minutes: number;
   status: string;
+  reschedule_requested_at: string | null;
 };
 
 function toAppointment(b: BookingRow): Omit<ScheduleAppointment, 'kind'> {
@@ -296,5 +297,7 @@ function toAppointment(b: BookingRow): Omit<ScheduleAppointment, 'kind'> {
     serviceName: b.service_name,
     durationMinutes: b.duration_minutes,
     status: b.status as AppointmentStatus,
+    rescheduleAsked:
+      b.status === 'confirmed' && b.reschedule_requested_at !== null,
   };
 }
