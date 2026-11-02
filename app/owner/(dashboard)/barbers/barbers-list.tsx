@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 import { CircleAlert } from "lucide-react";
+import { Alert } from "@/components/alert";
 import { Toast } from "@/components/toast";
 import { Dialog } from "@/components/dialog";
 import { TextField } from "@/components/form-field";
@@ -208,7 +209,8 @@ function InviteDialog({ open, onClose, onSent }: { open: boolean; onClose: () =>
 function InviteNotice({ notice }: { notice: Extract<Notice, { kind: "invite" }> }) {
   const [copied, setCopied] = useState(false);
   return (
-    <Toast title={notice.title} trigger={notice}>
+    // Not a slide-down notice: it holds the link to copy, so it stays at the top (2026-11-02).
+    <Alert title={notice.title}>
       <p>
         The link expires on {expiry(notice.expiresAt)}. Any earlier link for {notice.email} no longer works.
       </p>
@@ -237,6 +239,6 @@ function InviteNotice({ notice }: { notice: Extract<Notice, { kind: "invite" }> 
           </button>
         </div>
       </div>
-    </Toast>
+    </Alert>
   );
 }

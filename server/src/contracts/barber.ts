@@ -25,7 +25,10 @@ export type ScheduleAppointment = {
   serviceName: string;
   durationMinutes: number;
   status: AppointmentStatus;
-  /** The shop asked the customer to move it, so this time may free up (shown as "Reschedule asked"). */
+  /**
+   * The shop asked the customer to move it and it hasn't started, so this time may free up
+   * (shown as "Reschedule asked").
+   */
   rescheduleAsked: boolean;
 };
 

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { StepBar } from "@/components/shop/bars";
 import { HoldTimer } from "@/components/shop/hold-timer";
 import { Toast } from "@/components/toast";
+import { renderId } from "@/lib/notice";
 import { getAccount, safeNext } from "@/lib/auth/customer";
 import { getActiveHold } from "../hold";
 import { LoginForm } from "../forms";
@@ -36,7 +37,7 @@ async function Login({ searchParams }: Pick<Props, "searchParams">) {
       <main className="flex flex-col gap-6 px-4 py-6">
         {hold && <HoldTimer secondsLeft={hold.holdSecondsLeft} />}
         {one(query.verified) && (
-          <Toast variant="success" title="Email verified">Log in to see your bookings.</Toast>
+          <Toast variant="success" title="Email verified" trigger={renderId()}>Log in to see your bookings.</Toast>
         )}
         <Intro title="Welcome back">
           {hold ? "Log in to finish your booking. Your details will fill in for you." : "Log in to see and manage your bookings."}

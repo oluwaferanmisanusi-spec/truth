@@ -28,11 +28,12 @@ export async function saveService(_prev: ServiceFormState, formData: FormData): 
   };
 
   const barberIds = formData.getAll("barberIds").map(String);
+  const shownBarberIds = formData.getAll("shownBarberIds").map(String);
 
   try {
     await api(id ? `/owner/services/${encodeURIComponent(id)}` : "/owner/services", {
       method: id ? "PUT" : "POST",
-      body: { ...values, barberIds },
+      body: { ...values, barberIds, shownBarberIds },
     });
   } catch (error) {
     unstable_rethrow(error);

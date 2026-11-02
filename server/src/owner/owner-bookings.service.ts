@@ -93,8 +93,12 @@ export class OwnerBookingsService {
         .gt('starts_at', now);
     else if (filters.status && filters.status !== 'refund_failed') {
       query = query.eq('status', filters.status);
-      const failed = await this.refundProblemBookingIds();
-      if (failed.length) query = query.not('id', 'in', `(${failed.join(',')})`);
+      // Only cancelled bookings carry refunds (expired ones are left out above).
+      if (filters.status === 'cancelled') {
+        const failed = await this.refundProblemBookingIds();
+        if (failed.length)
+          query = query.not('id', 'in', `(${failed.join(',')})`);
+      }
     }
 
     const { data, error } = await query;
@@ -117,8 +121,11 @@ export class OwnerBookingsService {
         // Owners can cancel confirmed bookings that haven't started (the database re-checks this).
         cancellable:
           b.status === 'confirmed' && Date.parse(b.starts_at) > nowMs,
+        // Same rule on every screen: asked to move, and not started yet.
         rescheduleAsked:
-          b.status === 'confirmed' && b.reschedule_requested_at !== null,
+          b.status === 'confirmed' &&
+          b.reschedule_requested_at !== null &&
+          Date.parse(b.starts_at) > nowMs,
         refundFailed: failed
           ? {
               refundId: failed.id,

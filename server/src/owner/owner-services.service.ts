@@ -60,8 +60,13 @@ export const ServiceBody = z.object({
             ),
         ),
     ),
-  /** Active barbers who offer it (the picker lists active barbers only; others keep their link). */
+  /** Ticked barbers in the form's picker. */
   barberIds: z.array(z.guid()).max(100).default([]),
+  /**
+   * Every barber the picker showed, ticked or not. Only these can be changed, so a barber who
+   * became active after the form opened (or a form without the picker) leaves links alone.
+   */
+  shownBarberIds: z.array(z.guid()).max(100).default([]),
 });
 export type ServiceBody = z.output<typeof ServiceBody>;
 
@@ -201,19 +206,25 @@ export class OwnerServicesService {
       });
     }
     if (result.error) throw result.error;
-    await this.setBarbers(result.data!.id, body.barberIds);
+    await this.setBarbers(result.data!.id, body.barberIds, body.shownBarberIds);
     return { id: result.data!.id };
   }
 
   /**
-   * Ticked active barbers offer the service, unticked active ones stop. Barbers who aren't
-   * active aren't in the picker, so their link is left alone (the barber page handles it).
+   * Of the active barbers the picker showed, ticked ones offer the service and unticked ones
+   * stop. Anyone else (not shown, or no longer active) keeps their link; the barber page
+   * handles them.
    */
-  private async setBarbers(serviceId: string, selected: string[]) {
+  private async setBarbers(
+    serviceId: string,
+    selected: string[],
+    shown: string[],
+  ) {
     const db = this.supabase.admin;
-    const active = (await this.activeBarbers()).map((b) => b.id);
-    const chosen = [...new Set(selected)].filter((id) => active.includes(id));
-    const rest = active.filter((id) => !chosen.includes(id));
+    const active = new Set((await this.activeBarbers()).map((b) => b.id));
+    const editable = [...new Set(shown)].filter((id) => active.has(id));
+    const chosen = editable.filter((id) => selected.includes(id));
+    const rest = editable.filter((id) => !chosen.includes(id));
     if (chosen.length) {
       const { error } = await db.from('barber_services').upsert(
         chosen.map((barber_id) => ({ barber_id, service_id: serviceId })),

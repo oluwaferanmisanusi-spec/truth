@@ -70,6 +70,9 @@ export function ServiceForm({ id, initial, durationOptions, bufferOptions, barbe
           {barbers.length ? (
             <div className="flex flex-wrap gap-x-6" key={`barbers-${state ? "retry" : "initial"}`}>
               {barbers.map((b) => (
+                <input key={`shown-${b.id}`} type="hidden" name="shownBarberIds" value={b.id} />
+              ))}
+              {barbers.map((b) => (
                 <Checkbox key={b.id} name="barberIds" value={b.id} defaultChecked={ticked ? ticked.has(b.id) : b.offered}>
                   {b.name}
                 </Checkbox>

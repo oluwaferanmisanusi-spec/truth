@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { StepBar } from "@/components/shop/bars";
 import { Stepper } from "@/components/shop/stepper";
 import { Toast } from "@/components/toast";
+import { renderId } from "@/lib/notice";
 import { DateStrip, formatIsoDay, groupSlots, NoTimes } from "@/components/shop/date-strip";
 import { TimePicker } from "@/components/shop/time-picker";
 import type { ServiceWithBarbers, Times } from "@api/booking";
@@ -50,16 +51,16 @@ async function ChooseTime({ params, searchParams }: Props) {
         <div className="flex flex-col gap-6 px-4 py-6">
           <Stepper step={3} context={`${service.name} with ${barber ? barber.fullName : "any available barber"}`} />
           {one(query.limited) === "holds" ? (
-            <Toast variant="warning" role="alert" title="You already have times on hold" trigger={taken ?? query.limited}>
+            <Toast variant="warning" role="alert" title="You already have times on hold" trigger={renderId()}>
               Pay for one of them, or go back from its payment page to let it go, then choose a time again.
             </Toast>
           ) : one(query.limited) && (
-            <Toast variant="warning" role="alert" title="Too many attempts" trigger={taken ?? query.limited}>
+            <Toast variant="warning" role="alert" title="Too many attempts" trigger={renderId()}>
               You’ve held a lot of times in the last hour. Please wait a while, then choose a time again.
             </Toast>
           )}
           {taken && !Number.isNaN(Date.parse(taken)) && (
-            <Toast variant="danger" role="alert" title={`${formatTime(taken)} was just booked`} trigger={taken ?? query.limited}>
+            <Toast variant="danger" role="alert" title={`${formatTime(taken)} was just booked`} trigger={renderId()}>
               Someone else booked it a moment ago. Choose another time.
             </Toast>
           )}
