@@ -7,6 +7,7 @@ import { TimePicker } from "@/components/shop/time-picker";
 import { HoldTimer } from "@/components/shop/hold-timer";
 import { Alert } from "@/components/alert";
 import { Toast } from "@/components/toast";
+import { renderId } from "@/lib/notice";
 import { SubmitButton } from "@/components/shop/submit-button";
 import type { Times } from "@api/booking";
 import { api } from "@/lib/api/client";
@@ -56,23 +57,23 @@ async function Choose({ m, query }: { m: Managed; query: Query }) {
             <p className="text-small text-ink-muted">Currently {at(b.startsAt)}</p>
           </div>
           {one(query.limited) && (
-            <Toast variant="warning" role="alert" title="Too many attempts">
+            <Toast variant="warning" role="alert" title="Too many attempts" trigger={renderId()}>
               You’ve held a lot of times in the last hour. Please wait a while, then choose a time again.
             </Toast>
           )}
           {valid(taken) && (
-            <Toast variant="danger" role="alert" title={`${formatTime(taken!)} was just booked`}>
+            <Toast variant="danger" role="alert" title={`${formatTime(taken!)} was just booked`} trigger={renderId()}>
               Someone else booked it a moment ago. Choose another time.
             </Toast>
           )}
           {valid(lost) && (
-            <Toast variant="danger" role="alert" title={`${formatTime(lost!)} was just booked`}>
+            <Toast variant="danger" role="alert" title={`${formatTime(lost!)} was just booked`} trigger={renderId()}>
               Someone booked it before you confirmed. Your booking is still {formatDay(b.startsAt)} at{" "}
               {formatTime(b.startsAt)}. Choose another time.
             </Toast>
           )}
           {valid(expired) && (
-            <Toast variant="warning" role="alert" title="Your hold ran out">
+            <Toast variant="warning" role="alert" title="Your hold ran out" trigger={renderId()}>
               We held {formatTime(expired!)} on {formatDay(expired!)} for {words.hold}. Your booking hasn’t changed. Choose a
               time again.
             </Toast>

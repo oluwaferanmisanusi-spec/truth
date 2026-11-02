@@ -21,7 +21,7 @@ export type OwnerBooking = {
   barberName: string;
   /** Confirmed and not started yet. */
   cancellable: boolean;
-  /** The shop asked the customer to move it and they haven't yet. */
+  /** The shop asked the customer to move it, they haven't yet, and it hasn't started. */
   rescheduleAsked: boolean;
   /** A refund owed on it didn't go through (Paystack refused or couldn't be reached). */
   refundFailed: {

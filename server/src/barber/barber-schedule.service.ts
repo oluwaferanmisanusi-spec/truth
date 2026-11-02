@@ -297,7 +297,10 @@ function toAppointment(b: BookingRow): Omit<ScheduleAppointment, 'kind'> {
     serviceName: b.service_name,
     durationMinutes: b.duration_minutes,
     status: b.status as AppointmentStatus,
+    // Same rule on every screen: asked to move, and not started yet.
     rescheduleAsked:
-      b.status === 'confirmed' && b.reschedule_requested_at !== null,
+      b.status === 'confirmed' &&
+      b.reschedule_requested_at !== null &&
+      Date.parse(b.starts_at) > Date.now(),
   };
 }

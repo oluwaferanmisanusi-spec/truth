@@ -7,6 +7,7 @@ import { StepBar, BottomBar } from "@/components/shop/bars";
 import { LogoutButton } from "@/components/shop/logout-button";
 import { BookingStatusBadge } from "@/components/status-badge";
 import { Toast } from "@/components/toast";
+import { renderId } from "@/lib/notice";
 import { buttonClass } from "@/components/ui";
 import { requireAccount } from "@/lib/auth/customer";
 import type { MyBookings } from "@api/booking";
@@ -43,7 +44,7 @@ async function MyBookings({ searchParams }: Pick<Props, "searchParams">) {
       <div className="flex flex-col gap-6 px-4 py-6">
         {!account.verified && <VerifyBanner email={account.email} action={resendVerification} />}
         {account.verified && added > 0 && (
-          <Toast variant="success" title={`We added ${added} ${added === 1 ? "booking" : "bookings"} you made as a guest`}>
+          <Toast variant="success" title={`We added ${added} ${added === 1 ? "booking" : "bookings"} you made as a guest`} trigger={renderId()}>
             They were booked with {account.email} before you had an account.
           </Toast>
         )}

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CalendarDays, CalendarOff, Store } from "lucide-react";
 import type { BarberDay, OutcomeDue, ScheduleAppointment, ScheduleBlock } from "@api/barber";
 import { Toast } from "@/components/toast";
+import { renderId } from "@/lib/notice";
 import { BarberBar, PeriodNav, ViewTabs } from "@/components/barber/schedule-nav";
 import { OutcomesBanner } from "@/components/barber/outcomes-banner";
 import { RemoveBlockButton } from "@/components/barber/remove-block";
@@ -172,7 +173,7 @@ function Empty({ day, past }: { day: BarberDay; past: boolean }) {
 function Notice({ query }: { query: Awaited<Props["searchParams"]> }) {
   if (one(query.joined)) {
     return (
-      <Toast variant="success" title="You’ve joined Truth">
+      <Toast variant="success" title="You’ve joined Truth" trigger={renderId()}>
         This is your schedule. New bookings show up here as customers make them.
       </Toast>
     );
@@ -180,7 +181,7 @@ function Notice({ query }: { query: Awaited<Props["searchParams"]> }) {
   const blocked = one(query.blocked)?.match(/^(\d{4}-\d{2}-\d{2})_(\d{2}:\d{2})_(\d{2}:\d{2})$/);
   if (blocked && isIsoDate(blocked[1])) {
     return (
-      <Toast variant="success" title="Time blocked">
+      <Toast variant="success" title="Time blocked" trigger={renderId()}>
         Customers can’t book you from {blocked[2]} to {blocked[3]} on {dayLabel(blocked[1])}.
       </Toast>
     );
@@ -188,7 +189,7 @@ function Notice({ query }: { query: Awaited<Props["searchParams"]> }) {
   const leave = one(query.leave)?.match(/^(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})_\d+$/);
   if (leave && isIsoDate(leave[1]) && isIsoDate(leave[2])) {
     return (
-      <Toast variant="success" title="Leave blocked">
+      <Toast variant="success" title="Leave blocked" trigger={renderId()}>
         Customers can’t book you {leave[1] === leave[2] ? `on ${dayLabel(leave[1])}` : `from ${dayRange(leave[1], leave[2])}`}.
       </Toast>
     );
@@ -197,7 +198,7 @@ function Notice({ query }: { query: Awaited<Props["searchParams"]> }) {
   const times = removed?.match(/^(\d{2}:\d{2})_(\d{2}:\d{2})$/);
   if (times || removed === "day") {
     return (
-      <Toast variant="success" title="Block removed">
+      <Toast variant="success" title="Block removed" trigger={renderId()}>
         {times ? `${times[1]} to ${times[2]}` : "That day"} is now open for bookings.
       </Toast>
     );
