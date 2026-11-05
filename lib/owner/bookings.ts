@@ -18,15 +18,13 @@ export type BookingFilters = {
  * payment refunded). "Booked" is confirmed, not started and not asked to move; "Reschedule
  * asked" is the same but asked to move; "Needs outcome" is confirmed and started without the
  * barber marking it; "Refund failed" is bookings with a refund that didn't go through. Each
- * booking shows (and filters as) one status. "Upcoming" is every booking still to come, so the
- * barber page and Shop settings can link to all the ones to cancel or move.
+ * booking shows (and filters as) one status.
  */
 export const FILTER_STATUSES = [
-  "upcoming", "pending_payment", "confirmed", "reschedule_asked", "needs_outcome", "completed", "no_show", "cancelled",
+  "pending_payment", "confirmed", "reschedule_asked", "needs_outcome", "completed", "no_show", "cancelled",
   "refund_failed",
 ] as const;
 type FilterStatus = (typeof FILTER_STATUSES)[number];
-const FILTER_LABELS: Record<FilterStatus, string> = { ...BOOKING_STATUS_LABELS, upcoming: "Upcoming" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -60,7 +58,7 @@ export async function listBookings(filters: BookingFilters) {
 
 export async function listFilterOptions() {
   const options = await api<BookingFilterOptions>("/owner/booking-filters");
-  return { ...options, statuses: FILTER_STATUSES.map((s) => ({ value: s, label: FILTER_LABELS[s] })) };
+  return { ...options, statuses: FILTER_STATUSES.map((s) => ({ value: s, label: BOOKING_STATUS_LABELS[s] })) };
 }
 
 export async function getOutcomesDue() {

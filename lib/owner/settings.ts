@@ -19,9 +19,9 @@ export function formatHolidayDate(isoDate: string) {
   return holidayDate.format(new Date(`${isoDate}T00:00:00Z`)).replace(",", "");
 }
 
-/** Bookings → that day's upcoming bookings, ready to cancel or move. */
+/** Bookings → that day's bookings, every status; the owner picks Booked or Reschedule asked (2026-11-05). */
 export function bookingsOnDay(isoDate: string) {
-  return `/owner/bookings?${new URLSearchParams({ from: isoDate, to: isoDate, status: "upcoming" })}`;
+  return `/owner/bookings?${new URLSearchParams({ from: isoDate, to: isoDate })}`;
 }
 
 export async function getShopSettings() {

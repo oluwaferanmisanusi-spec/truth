@@ -72,7 +72,6 @@ const BookingQuery = z.object({
       'needs_outcome',
       'refund_failed',
       'reschedule_asked',
-      'upcoming',
     ])
     .optional(),
 });
